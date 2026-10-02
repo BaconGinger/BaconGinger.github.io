@@ -201,7 +201,19 @@ figure { margin: 1.5em 0; }
   font-weight: normal;
 }
 
+.description { line-height: 1.9; }
 .description p { margin: 0; }
+.description p + p { margin-top: 0.7em; }
+.description h3 {
+  font-size: 1em;
+  font-weight: 600;
+  margin: 1.1em 0 0.3em;
+}
+.description ul {
+  margin: 0.3em 0;
+  padding: 0;
+  list-style: none;
+}
 
 .zuobiao i.ico_map {
   line-height: 1.8;
