@@ -245,7 +245,7 @@
 
 
     <meta name="generator" content="Gridea Pro 1.2.2">
-    <title>闪念 | BaconGinger&#39;s blog</title>
+    <title>日记 | BaconGinger&#39;s blog</title>
 
     
 <link rel="canonical" href="https://baconginger.github.io/memos/">
@@ -293,7 +293,7 @@
         <div class="mod-head__logo">
             <a href="/">
                 
-                <img class="avatar" alt="avatar" src="/images/avatar.png">
+                <img class="avatar" alt="avatar" src="https://cdn.jsdelivr.net/gh/BaconGinger/BaconGinger.github.io@main/images/avatar.png">
                 
             </a>
         </div>
@@ -352,227 +352,55 @@
 <article class="mod-post mod-post__type-post">
 
     <header>
-        <h1 class="mod-post__title">闪念</h1>
+        <h1 class="mod-post__title">日记</h1>
     </header>
 
     <div class="mod-post__entry wzulli">
 
         
-
-        <!-- 热力图 -->
-        <div class="heatmap-wrap">
-            <div id="heatmap-root"></div>
-            <div class="heatmap-footer">
-                <span id="heatmap-total"></span>
-                <div class="heatmap-legend">
-                    <span>少</span>
-                    <span class="heatmap-legend-cell" style="background:#ebedf0;"></span>
-                    <span class="heatmap-legend-cell" style="background:#9be9a8;"></span>
-                    <span class="heatmap-legend-cell" style="background:#40c463;"></span>
-                    <span class="heatmap-legend-cell" style="background:#28df99;"></span>
-                    <span class="heatmap-legend-cell" style="background:#1a9f6b;"></span>
-                    <span>多</span>
-                </div>
+        <div class="diary-lock" id="diary-lock">
+            <p class="diary-lock__hint">这里的内容是加密存放的，输入密码查看。</p>
+            <div class="diary-lock__row">
+                <input type="password" id="diary-password" class="diary-lock__input" placeholder="密码"
+                    autocomplete="current-password" spellcheck="false" />
+                <button type="button" id="diary-unlock" class="diary-lock__btn">解锁</button>
             </div>
+            <p class="diary-lock__msg" id="diary-msg"></p>
         </div>
-
-        <!-- 闪念列表 -->
-        <div class="memos-list">
-            
-            <div class="memo-item " data-created="2026-09-17">
-                <div class="memo-body">
-                    <div class="memo-content">
-                        <ul>
-<li>早上和小宝争执了一下，忘记原因了，肯定有自身表达语气的问题。不能不耐烦的。</li>
-<li>晚上吃桂在香知，依旧美味。</li>
-<li>太习惯于在各种页面中漫无目的地游逛，增加目的性不知能否解决这个问题。</li>
-<li>今天没怎么复习，但不过找到这个软件用来规划也不错。</li>
-<li>明天加油！</li>
-</ul>
-
-                    </div>
-                </div>
-                
-                <div class="memo-meta">
-                    <time>2026-09-17</time>
-                </div>
-            </div>
-            
-        </div>
-
-        <!-- 分页控件 -->
-        <div class="memo-pagination" id="memo-pagination">
-            <a href="javascript:void(0);" id="memo-prev-btn" class="disabled" onclick="memoPrevPage()">←
-                上一页</a>
-            <span class="memo-page-info" id="memo-page-info"></span>
-            <a href="javascript:void(0);" id="memo-next-btn" onclick="memoNextPage()">下一页 →</a>
-        </div>
-
-        <script>
-            (function () {
-                var MEMO_PER_PAGE = 20;
-                var currentPage = 1;
-                var items = document.querySelectorAll('.memo-item');
-                var totalItems = items.length;
-                var totalPages = Math.ceil(totalItems / MEMO_PER_PAGE);
-
-                // 初始化内容折叠
-                items.forEach(function (item) {
-                    var body = item.querySelector('.memo-body');
-                    var content = item.querySelector('.memo-content');
-                    if (content && content.scrollHeight > 160) {
-                        body.classList.add('collapsed');
-                        var btn = document.createElement('button');
-                        btn.className = 'memo-expand-btn';
-                        btn.style.display = 'inline';
-                        btn.textContent = '展开全文 ▼';
-                        btn.onclick = function () {
-                            if (body.classList.contains('collapsed')) {
-                                body.style.maxHeight = content.scrollHeight + 'px';
-                                body.classList.remove('collapsed');
-                                btn.textContent = '收起 ▲';
-                            } else {
-                                body.style.maxHeight = '160px';
-                                body.classList.add('collapsed');
-                                btn.textContent = '展开全文 ▼';
-                            }
-                        };
-                        body.parentNode.insertBefore(btn, body.nextSibling);
-                    }
-                });
-
-                // ======= GitHub 风格热力图 =======
-                var heatmapData = {};
-                items.forEach(function (item) {
-                    var d = item.getAttribute('data-created');
-                    if (d) {
-                        var dateStr = d.substring(0, 10);
-                        heatmapData[dateStr] = (heatmapData[dateStr] || 0) + 1;
-                    }
-                });
-
-                var COLORS = ['#ebedf0', '#9be9a8', '#40c463', '#28df99', '#1a9f6b'];
-                var MONTHS = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
-                var DAYS = ['日', '一', '二', '三', '四', '五', '六'];
-
-                var today = new Date();
-                today.setHours(0, 0, 0, 0);
-                var endDay = today.getDay();
-                var totalDays = 52 * 7 + endDay + 1;
-                var startDate = new Date(today);
-                startDate.setDate(startDate.getDate() - totalDays + 1);
-                startDate.setDate(startDate.getDate() - startDate.getDay());
-
-                var totalWeeks = Math.ceil(totalDays / 7);
-
-                var weeks = [];
-                for (var w = 0; w < totalWeeks; w++) {
-                    var week = [];
-                    for (var d = 0; d < 7; d++) {
-                        var cellDate = new Date(startDate);
-                        cellDate.setDate(cellDate.getDate() + w * 7 + d);
-                        var key = cellDate.getFullYear() + '-' + String(cellDate.getMonth() + 1).padStart(2, '0') + '-' + String(cellDate.getDate()).padStart(2, '0');
-                        var count = heatmapData[key] || 0;
-                        var level = count === 0 ? 0 : count === 1 ? 1 : count <= 3 ? 2 : count <= 5 ? 3 : 4;
-                        var future = cellDate > today;
-                        week.push({ date: cellDate, key: key, count: count, level: level, future: future, month: cellDate.getMonth(), dayOfMonth: cellDate.getDate() });
-                    }
-                    weeks.push(week);
-                }
-
-                var monthLabels = [];
-                var lastMonth = -1;
-                for (var w = 0; w < weeks.length; w++) {
-                    var firstDay = weeks[w][0];
-                    if (!firstDay.future && firstDay.month !== lastMonth) {
-                        monthLabels.push({ weekIndex: w, label: MONTHS[firstDay.month] });
-                        lastMonth = firstDay.month;
-                    }
-                }
-
-                var html = '<table style="min-width: 600px;">';
-
-                html += '<tr><td class="heatmap-day-label"></td>';
-                var monthColIdx = 0;
-                for (var w = 0; w < totalWeeks; w++) {
-                    if (monthColIdx < monthLabels.length && monthLabels[monthColIdx].weekIndex === w) {
-                        var nextIdx = monthColIdx + 1 < monthLabels.length ? monthLabels[monthColIdx + 1].weekIndex : totalWeeks;
-                        var span = nextIdx - w;
-                        html += '<td colspan="' + span + '" class="heatmap-month-label">' + monthLabels[monthColIdx].label + '</td>';
-                        w += span - 1;
-                        monthColIdx++;
-                    } else {
-                        html += '<td class="heatmap-month-label"></td>';
-                    }
-                }
-                html += '</tr>';
-
-                for (var d = 0; d < 7; d++) {
-                    html += '<tr>';
-                    html += '<td class="heatmap-day-label">' + DAYS[d] + '</td>';
-                    for (var w = 0; w < weeks.length; w++) {
-                        var c = weeks[w][d];
-                        if (c.future) {
-                            html += '<td></td>';
-                        } else {
-                            html += '<td class="cell" data-level="' + c.level + '" style="background:' + COLORS[c.level] + ';" title="' + c.key + ': ' + c.count + ' 条闪念"></td>';
-                        }
-                    }
-                    html += '</tr>';
-                }
-
-                html += '</table>';
-                var root = document.getElementById('heatmap-root');
-                root.innerHTML = html;
-                document.getElementById('heatmap-total').textContent = '过去一年共 ' + totalItems + ' 条闪念';
-
-                setTimeout(function () {
-                    var wrap = document.querySelector('.heatmap-wrap');
-                    if (wrap) {
-                        wrap.scrollLeft = wrap.scrollWidth;
-                    }
-                }, 100);
-
-                // ======= 分页 =======
-                function updatePagination() {
-                    for (var i = 0; i < items.length; i++) {
-                        var start = (currentPage - 1) * MEMO_PER_PAGE;
-                        var end = currentPage * MEMO_PER_PAGE;
-                        if (i >= start && i < end) {
-                            items[i].classList.remove('memo-hide');
-                        } else {
-                            items[i].classList.add('memo-hide');
-                        }
-                    }
-                    var prevBtn = document.getElementById('memo-prev-btn');
-                    var nextBtn = document.getElementById('memo-next-btn');
-                    var pageInfo = document.getElementById('memo-page-info');
-
-                    prevBtn.className = currentPage <= 1 ? 'disabled' : '';
-                    nextBtn.className = currentPage >= totalPages ? 'disabled' : '';
-                    pageInfo.textContent = currentPage + ' / ' + totalPages;
-
-                    if (totalPages <= 1) {
-                        document.getElementById('memo-pagination').style.display = 'none';
-                    }
-                }
-
-                window.memoNextPage = function () {
-                    if (currentPage < totalPages) { currentPage++; updatePagination(); window.scrollTo(0, 0); }
-                };
-                window.memoPrevPage = function () {
-                    if (currentPage > 1) { currentPage--; updatePagination(); window.scrollTo(0, 0); }
-                };
-
-                updatePagination();
-            })();
-        </script>
 
         
+        <div id="diary-content" style="display:none;">
+            <div class="heatmap-wrap">
+                <div id="heatmap-root"></div>
+                <div class="heatmap-footer">
+                    <span id="heatmap-total"></span>
+                    <div class="heatmap-legend">
+                        <span>少</span>
+                        <span class="heatmap-legend-cell" style="background:#ebedf0;"></span>
+                        <span class="heatmap-legend-cell" style="background:#9be9a8;"></span>
+                        <span class="heatmap-legend-cell" style="background:#40c463;"></span>
+                        <span class="heatmap-legend-cell" style="background:#28df99;"></span>
+                        <span class="heatmap-legend-cell" style="background:#1a9f6b;"></span>
+                        <span>多</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="memos-list" id="memos-list"></div>
+
+            <div class="memo-pagination" id="memo-pagination">
+                <a href="javascript:void(0);" id="memo-prev-btn" class="disabled" onclick="memoPrevPage()">←
+                    上一页</a>
+                <span class="memo-page-info" id="memo-page-info"></span>
+                <a href="javascript:void(0);" id="memo-next-btn" onclick="memoNextPage()">下一页 →</a>
+            </div>
+
+            <div class="diary-actions">
+                <a href="javascript:void(0);" id="diary-lock-btn" class="diary-lock__link">锁定并清除本页缓存</a>
+            </div>
+        </div>
 
     </div>
-
-    
 
 </article>
 
@@ -586,16 +414,7 @@
         <a class="menu-item" href="/post">博客</a>
         
          · 
-        <a class="menu-item" href="/memos">闪念</a>
-        
-         · 
-        <a class="menu-item" href="/archives">归档</a>
-        
-         · 
-        <a class="menu-item" href="/tags">标签</a>
-        
-         · 
-        <a class="menu-item" href="/links">友链</a>
+        <a class="menu-item" href="/memos">日记</a>
         
     </nav>
 
@@ -603,16 +422,434 @@
     <script>document.querySelector('.current-year').textContent = new Date().getFullYear();</script>
 
     <div class="index_footer">
-         ·
-        <a class="rss" href="/feed.xml" target="_blank" rel="noopener noreferrer">
-            <i class="ri-rss-line"></i>RSS
-        </a>
+        
     </div>
 </footer>
 
 
-
     
+<script src="/lib/marked.min.js"></script>
+<script>
+    (function () {
+        var BLOB_URL = '/images/diary.json';
+        // 缓存的是派生出来的密钥（base64 只有 44 字符），不是明文。
+        // 这样重新加密过之后旧密钥会解密失败，能明确提示，而不是默默显示旧内容。
+        var SESSION_KEY = 'diary.key.v1';
+        var MEMO_PER_PAGE = 20;
+        var COLLAPSE_HEIGHT = 160;
+
+        var lockPanel = document.getElementById('diary-lock');
+        var contentPanel = document.getElementById('diary-content');
+        var input = document.getElementById('diary-password');
+        var unlockBtn = document.getElementById('diary-unlock');
+        var msg = document.getElementById('diary-msg');
+        if (!lockPanel || !contentPanel) return;
+
+        var COLORS = ['#ebedf0', '#9be9a8', '#40c463', '#28df99', '#1a9f6b'];
+        var MONTHS = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+        var DAYS = ['日', '一', '二', '三', '四', '五', '六'];
+
+        // ---------- 小工具 ----------
+        function b64ToBytes(s) {
+            var norm = String(s).replace(/-/g, '+').replace(/_/g, '/').replace(/\s+/g, '');
+            while (norm.length % 4) norm += '=';
+            var bin = atob(norm);
+            var out = new Uint8Array(bin.length);
+            for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+            return out;
+        }
+
+        function bytesToB64(bytes) {
+            var bin = '';
+            for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+            return btoa(bin);
+        }
+
+        function esc(s) {
+            return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+            });
+        }
+
+        // 正文是 Markdown，用本地 /lib/marked.min.js 渲染
+        function renderMarkdown(md) {
+            if (window.marked && typeof window.marked.parse === 'function') {
+                return window.marked.parse(md);
+            }
+            return '<p>' + esc(md).replace(/\n/g, '<br>') + '</p>';
+        }
+
+        function say(text) {
+            if (msg) msg.textContent = text || '';
+        }
+
+        function setBusy(busy) {
+            if (unlockBtn) {
+                unlockBtn.disabled = busy;
+                unlockBtn.textContent = busy ? '解密中…' : '解锁';
+            }
+            if (input) input.disabled = busy;
+        }
+
+        // ---------- 取密文 / 派生密钥 / 解密 ----------
+        function fetchEnvelope() {
+            return fetch(BLOB_URL + '?t=' + Date.now(), { cache: 'no-store' })
+                .then(function (res) {
+                    if (!res.ok) throw new Error('blob-missing');
+                    var ctype = res.headers.get('content-type') || '';
+                    if (/text\/html/i.test(ctype)) throw new Error('blob-not-json');
+                    return res.json().catch(function () { throw new Error('blob-not-json'); });
+                })
+                .then(function (env) {
+                    if (!env || env.v !== 1) throw new Error('blob-version');
+                    if (typeof env.salt !== 'string' || typeof env.iv !== 'string' || typeof env.ct !== 'string') {
+                        throw new Error('blob-version');
+                    }
+                    // 头部没有认证，被改大的 iter 会把标签页卡死，这里设个上限
+                    if (!Number.isSafeInteger(env.iter) || env.iter < 10000 || env.iter > 4000000) {
+                        throw new Error('blob-version');
+                    }
+                    return env;
+                });
+        }
+
+        function deriveKey(passphrase, env) {
+            return crypto.subtle
+                .importKey('raw', new TextEncoder().encode(passphrase), 'PBKDF2', false, ['deriveKey'])
+                .then(function (km) {
+                    return crypto.subtle.deriveKey({
+                        name: 'PBKDF2',
+                        salt: b64ToBytes(env.salt),
+                        iterations: env.iter,
+                        hash: 'SHA-256'
+                    }, km, { name: 'AES-GCM', length: 256 },
+                        true,        // extractable：仅用于把密钥本身缓存进 sessionStorage
+                        ['decrypt']);
+                });
+        }
+
+        function decryptWithKey(key, env) {
+            return crypto.subtle
+                .decrypt({ name: 'AES-GCM', iv: b64ToBytes(env.iv) }, key, b64ToBytes(env.ct))
+                .then(function (buf) {
+                    return new TextDecoder().decode(buf).replace(/^﻿/, '');
+                });
+        }
+
+        function parsePayload(text) {
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                throw new Error('bad-payload');
+            }
+        }
+
+        function rememberKey(key) {
+            return crypto.subtle.exportKey('raw', key).then(function (raw) {
+                try {
+                    sessionStorage.setItem(SESSION_KEY, bytesToB64(new Uint8Array(raw)));
+                } catch (e) { /* 无痕模式等，忽略 */ }
+            }).catch(function () { /* 缓存失败不影响使用 */ });
+        }
+
+        function describeFailure(err) {
+            var m = err && err.message;
+            if (m === 'blob-missing') {
+                return '找不到 /images/diary.json。先在本地双击「加密日记.cmd」，再回 Gridea 同步一次。';
+            }
+            if (m === 'blob-not-json') {
+                return '拿到的不是 JSON（可能被 404 页面顶替了）。检查 /images/diary.json 是否已经发布。';
+            }
+            if (m === 'blob-version') {
+                return '密文格式不对，可能是加密脚本版本不匹配。';
+            }
+            if (m === 'bad-payload') {
+                return '解密成功但内容不是合法 JSON，文件可能损坏了。';
+            }
+            return '密码不对，或者文件已损坏。';
+        }
+
+        // ---------- 渲染 ----------
+        function renderDiary(data) {
+            var memos = (data && data.memos) ? data.memos.slice() : [];
+            memos.sort(function (a, b) {
+                return String(b.createdAt || '').localeCompare(String(a.createdAt || ''));
+            });
+
+            var html = '';
+            memos.forEach(function (m, i) {
+                var date = String(m.createdAt || '').slice(0, 10);
+                html += '<div class="memo-item' + (i >= MEMO_PER_PAGE ? ' memo-hide' : '') +
+                    '" data-created="' + esc(date) + '">' +
+                    '<div class="memo-body"><div class="memo-content">' +
+                    renderMarkdown(m.content || '') +
+                    '</div></div>' +
+                    '<div class="memo-meta"><time>' + esc(date) + '</time></div></div>';
+            });
+
+            var list = document.getElementById('memos-list');
+            list.innerHTML = html || '<p class="memos-empty">还没有日记</p>';
+
+            buildHeatmap();
+            wireCollapse();
+            wirePagination();
+        }
+
+        // ---------- GitHub 风格热力图 ----------
+        function buildHeatmap() {
+            var root = document.getElementById('heatmap-root');
+            if (!root) return;
+
+            var items = document.querySelectorAll('.memo-item');
+            var heatmapData = {};
+            items.forEach(function (item) {
+                var d = item.getAttribute('data-created');
+                if (d) {
+                    var dateStr = d.substring(0, 10);
+                    heatmapData[dateStr] = (heatmapData[dateStr] || 0) + 1;
+                }
+            });
+
+            var today = new Date();
+            today.setHours(0, 0, 0, 0);
+            var endDay = today.getDay();
+            var totalDays = 52 * 7 + endDay + 1;
+            var startDate = new Date(today);
+            startDate.setDate(startDate.getDate() - totalDays + 1);
+            startDate.setDate(startDate.getDate() - startDate.getDay());
+
+            var totalWeeks = Math.ceil(totalDays / 7);
+
+            var weeks = [];
+            for (var w = 0; w < totalWeeks; w++) {
+                var week = [];
+                for (var d = 0; d < 7; d++) {
+                    var cellDate = new Date(startDate);
+                    cellDate.setDate(cellDate.getDate() + w * 7 + d);
+                    var key = cellDate.getFullYear() + '-' + String(cellDate.getMonth() + 1).padStart(2, '0') + '-' + String(cellDate.getDate()).padStart(2, '0');
+                    var count = heatmapData[key] || 0;
+                    var level = count === 0 ? 0 : count === 1 ? 1 : count <= 3 ? 2 : count <= 5 ? 3 : 4;
+                    week.push({ date: cellDate, key: key, count: count, level: level, future: cellDate > today, month: cellDate.getMonth() });
+                }
+                weeks.push(week);
+            }
+
+            var monthLabels = [];
+            var lastMonth = -1;
+            for (var w2 = 0; w2 < weeks.length; w2++) {
+                var firstDay = weeks[w2][0];
+                if (!firstDay.future && firstDay.month !== lastMonth) {
+                    monthLabels.push({ weekIndex: w2, label: MONTHS[firstDay.month] });
+                    lastMonth = firstDay.month;
+                }
+            }
+
+            var html = '<table style="min-width: 600px;">';
+
+            html += '<tr><td class="heatmap-day-label"></td>';
+            var monthColIdx = 0;
+            for (var w3 = 0; w3 < totalWeeks; w3++) {
+                if (monthColIdx < monthLabels.length && monthLabels[monthColIdx].weekIndex === w3) {
+                    var nextIdx = monthColIdx + 1 < monthLabels.length ? monthLabels[monthColIdx + 1].weekIndex : totalWeeks;
+                    var span = nextIdx - w3;
+                    html += '<td colspan="' + span + '" class="heatmap-month-label">' + monthLabels[monthColIdx].label + '</td>';
+                    w3 += span - 1;
+                    monthColIdx++;
+                } else {
+                    html += '<td class="heatmap-month-label"></td>';
+                }
+            }
+            html += '</tr>';
+
+            for (var d2 = 0; d2 < 7; d2++) {
+                html += '<tr>';
+                html += '<td class="heatmap-day-label">' + DAYS[d2] + '</td>';
+                for (var w4 = 0; w4 < weeks.length; w4++) {
+                    var c = weeks[w4][d2];
+                    if (c.future) {
+                        html += '<td></td>';
+                    } else {
+                        html += '<td class="cell" data-level="' + c.level + '" style="background:' + COLORS[c.level] + ';" title="' + c.key + ': ' + c.count + ' 条日记"></td>';
+                    }
+                }
+                html += '</tr>';
+            }
+
+            html += '</table>';
+            root.innerHTML = html;
+
+            var total = document.getElementById('heatmap-total');
+            if (total) total.textContent = '过去一年共 ' + items.length + ' 条日记';
+
+            setTimeout(function () {
+                var wrap = document.querySelector('.heatmap-wrap');
+                if (wrap) wrap.scrollLeft = wrap.scrollWidth;
+            }, 100);
+        }
+
+        // ---------- 长内容折叠 ----------
+        function wireCollapse() {
+            document.querySelectorAll('.memo-item').forEach(function (item) {
+                var body = item.querySelector('.memo-body');
+                var bodyContent = item.querySelector('.memo-content');
+                if (bodyContent && bodyContent.scrollHeight > COLLAPSE_HEIGHT) {
+                    body.classList.add('collapsed');
+                    var btn = document.createElement('button');
+                    btn.className = 'memo-expand-btn';
+                    btn.style.display = 'inline';
+                    btn.textContent = '展开全文 ▼';
+                    btn.onclick = function () {
+                        if (body.classList.contains('collapsed')) {
+                            body.style.maxHeight = bodyContent.scrollHeight + 'px';
+                            body.classList.remove('collapsed');
+                            btn.textContent = '收起 ▲';
+                        } else {
+                            body.style.maxHeight = COLLAPSE_HEIGHT + 'px';
+                            body.classList.add('collapsed');
+                            btn.textContent = '展开全文 ▼';
+                        }
+                    };
+                    body.parentNode.insertBefore(btn, body.nextSibling);
+                }
+            });
+        }
+
+        // ---------- 分页 ----------
+        function wirePagination() {
+            var items = document.querySelectorAll('.memo-item');
+            var totalPages = Math.ceil(items.length / MEMO_PER_PAGE) || 1;
+            var currentPage = 1;
+            var pag = document.getElementById('memo-pagination');
+            if (!pag) return;
+
+            function update() {
+                var start = (currentPage - 1) * MEMO_PER_PAGE;
+                var end = currentPage * MEMO_PER_PAGE;
+                for (var i = 0; i < items.length; i++) {
+                    if (i >= start && i < end) {
+                        items[i].classList.remove('memo-hide');
+                    } else {
+                        items[i].classList.add('memo-hide');
+                    }
+                }
+                var prevBtn = document.getElementById('memo-prev-btn');
+                var nextBtn = document.getElementById('memo-next-btn');
+                var pageInfo = document.getElementById('memo-page-info');
+                if (prevBtn) prevBtn.className = currentPage <= 1 ? 'disabled' : '';
+                if (nextBtn) nextBtn.className = currentPage >= totalPages ? 'disabled' : '';
+                if (pageInfo) pageInfo.textContent = currentPage + ' / ' + totalPages;
+                pag.style.display = totalPages <= 1 ? 'none' : '';
+            }
+
+            window.memoNextPage = function () {
+                if (currentPage < totalPages) { currentPage++; update(); window.scrollTo(0, 0); }
+            };
+            window.memoPrevPage = function () {
+                if (currentPage > 1) { currentPage--; update(); window.scrollTo(0, 0); }
+            };
+
+            update();
+        }
+
+        // ---------- 解锁 / 锁定 ----------
+        function showDiary(data) {
+            lockPanel.style.display = 'none';
+            contentPanel.style.display = '';
+            renderDiary(data);
+        }
+
+        function unlock() {
+            var passphrase = input ? input.value : '';
+            if (!passphrase) { say('请输入密码。'); return; }
+
+            if (!window.crypto || !crypto.subtle) {
+                say('当前环境不支持解密（页面需要 HTTPS 或 localhost）。');
+                return;
+            }
+
+            setBusy(true);
+            say('解密中…');
+
+            var env;
+            fetchEnvelope()
+                .then(function (e) {
+                    env = e;
+                    return deriveKey(passphrase, env);
+                })
+                .then(function (key) {
+                    return decryptWithKey(key, env).then(function (text) {
+                        return rememberKey(key).then(function () { return text; });
+                    });
+                })
+                .then(function (text) {
+                    say('');
+                    showDiary(parsePayload(text));
+                    if (input) input.value = '';
+                })
+                .catch(function (err) {
+                    say(describeFailure(err));
+                    if (input) { input.focus(); input.select(); }
+                })
+                .then(function () {
+                    setBusy(false);
+                });
+        }
+
+        if (unlockBtn) unlockBtn.addEventListener('click', unlock);
+        if (input) {
+            input.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') unlock();
+            });
+        }
+
+        var lockBtn = document.getElementById('diary-lock-btn');
+        if (lockBtn) {
+            lockBtn.addEventListener('click', function () {
+                try { sessionStorage.removeItem(SESSION_KEY); } catch (e) { /* 忽略 */ }
+                window.location.reload();
+            });
+        }
+
+        // ---------- 本次会话解过就直接显示，不用再输一遍密码 ----------
+        (function restore() {
+            var cached = null;
+            try { cached = sessionStorage.getItem(SESSION_KEY); } catch (e) { /* 忽略 */ }
+
+            if (!cached) {
+                if (input) input.focus();
+                return;
+            }
+
+            if (!window.crypto || !crypto.subtle) {
+                if (input) input.focus();
+                return;
+            }
+
+            var key, env;
+            crypto.subtle
+                .importKey('raw', b64ToBytes(cached), { name: 'AES-GCM' }, false, ['decrypt'])
+                .then(function (k) {
+                    key = k;
+                    return fetchEnvelope();
+                })
+                .then(function (e) {
+                    env = e;
+                    return decryptWithKey(key, env);
+                })
+                .then(function (text) {
+                    showDiary(parsePayload(text));
+                })
+                .catch(function () {
+                    // 重新加密过（换了密码或加了新日记）会让旧密钥失效，
+                    // 这时不能说“密码错误”，否则用户会一头雾水。
+                    try { sessionStorage.removeItem(SESSION_KEY); } catch (e2) { /* 忽略 */ }
+                    say('登录状态已过期（日记更新过或密码改了），请重新输入密码。');
+                    if (input) input.focus();
+                });
+        })();
+    })();
+</script>
+
 
     
 <script>console.log("\n%c ✦ Gridea Pro v1.2.2 %c · Theme: amore-jinja2 v1.1.0 · https://gridea.pro %c\n","color:#fadfa3;background:#111111;padding:9px 14px;border-radius:4px 0 0 4px;font-weight:500;font-size:12px","color:#e05c00;background:#fff3ec;padding:9px 14px;border-radius:0 4px 4px 0;font-size:11px","")</script>

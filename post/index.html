@@ -293,7 +293,7 @@
         <div class="mod-head__logo">
             <a href="/">
                 
-                <img class="avatar" alt="avatar" src="/images/avatar.png">
+                <img class="avatar" alt="avatar" src="https://cdn.jsdelivr.net/gh/BaconGinger/BaconGinger.github.io@main/images/avatar.png">
                 
             </a>
         </div>
@@ -354,6 +354,8 @@
     <div class="mod-archive__item">
         <div class="mod-archive__year"></div>
 
+        <div class="tag-filter" id="tag-filter" style="display:none;"></div>
+
         <ul class="mod-archive__list">
             
             
@@ -362,7 +364,8 @@
 
             
             
-            <li class="post-item"><time class="mod-archive__time" datetime="2026-04-22">2026-04-22</time> <span>&nbsp;&nbsp;&nbsp;</span>
+            <li class="post-item" data-tags="|紫罗兰永恒花园|动漫|"><time
+                    class="mod-archive__time" datetime="2026-04-22">2026-04-22</time> <span>&nbsp;&nbsp;&nbsp;</span>
                 <a href="/post/ep01-02/">
                     
                     EP01/02
@@ -372,13 +375,122 @@
             
         </ul>
 
-        <div class="posts-nav">
+        <div class="posts-nav" id="posts-nav">
             
             
 
             
             
         </div>
+
+        <script>
+            (function () {
+                var list = document.querySelector('.mod-archive__list');
+                if (!list) return;
+                var items = Array.prototype.slice.call(list.querySelectorAll('li.post-item'));
+                if (!items.length) return;
+
+                // 每篇文章的标签，模板里写成 |tag1|tag2| 的形式便于切分
+                var tagIndex = [];
+                items.forEach(function (li) {
+                    var raw = li.getAttribute('data-tags') || '';
+                    var tags = raw.split('|').filter(function (t) { return t !== ''; });
+                    li.dataset.tagList = tags.join('\u0001');
+                    tags.forEach(function (t) {
+                        if (tagIndex.indexOf(t) === -1) tagIndex.push(t);
+                    });
+                });
+
+                var nav = document.getElementById('posts-nav');
+                var nextContainer = document.getElementById('next-page-container');
+                var prevBtn = document.getElementById('prev-page-btn');
+                var pageInfo = document.getElementById('page-info');
+                var perPageEl = document.getElementById('pagination-config');
+                var perPage = perPageEl ? parseInt(perPageEl.getAttribute('data-per-page'), 10) : 10;
+                if (!perPage || isNaN(perPage) || perPage < 1) perPage = 10;
+                var clientPaging = !!(nextContainer && prevBtn);
+
+                var activeTag = null;
+                var currentPage = 1;
+
+                function render() {
+                    var pool = items.filter(function (li) {
+                        if (!activeTag) return true;
+                        return li.dataset.tagList.split('\u0001').indexOf(activeTag) !== -1;
+                    });
+
+                    if (activeTag || !clientPaging) {
+                        // 筛选时不分页，符合条件的全部展示
+                        items.forEach(function (li) {
+                            li.style.display = pool.indexOf(li) !== -1 ? '' : 'none';
+                        });
+                    } else {
+                        var start = (currentPage - 1) * perPage;
+                        var end = start + perPage;
+                        items.forEach(function (li, i) {
+                            li.style.display = (i >= start && i < end) ? '' : 'none';
+                        });
+                    }
+
+                    if (!clientPaging) return;
+
+                    if (activeTag) {
+                        if (nav) nav.style.display = 'none';
+                        return;
+                    }
+                    if (nav) nav.style.display = '';
+
+                    var totalPages = Math.max(1, Math.ceil(items.length / perPage));
+                    nextContainer.style.display = currentPage >= totalPages ? 'none' : 'block';
+                    prevBtn.style.display = currentPage > 1 ? 'inline' : 'none';
+                    if (pageInfo) pageInfo.textContent = currentPage + ' / ' + totalPages;
+                }
+
+                window.nextPage = function () {
+                    var totalPages = Math.max(1, Math.ceil(items.length / perPage));
+                    if (currentPage < totalPages) {
+                        currentPage++;
+                        render();
+                        window.scrollTo(0, 0);
+                    }
+                };
+                window.prevPage = function () {
+                    if (currentPage > 1) {
+                        currentPage--;
+                        render();
+                        window.scrollTo(0, 0);
+                    }
+                };
+
+                // 标签筛选栏：由文章自身的标签动态生成
+                var bar = document.getElementById('tag-filter');
+                if (bar && tagIndex.length) {
+                    var chips = [];
+                    var addChip = function (label, value) {
+                        var a = document.createElement('a');
+                        a.href = 'javascript:void(0);';
+                        a.className = 'tag-chip';
+                        a.textContent = label;
+                        a.onclick = function () {
+                            activeTag = value;
+                            currentPage = 1;
+                            chips.forEach(function (c) {
+                                c.el.className = 'tag-chip' + (c.value === value ? ' is-active' : '');
+                            });
+                            render();
+                        };
+                        bar.appendChild(a);
+                        chips.push({ el: a, value: value });
+                    };
+                    addChip('全部', null);
+                    tagIndex.forEach(function (t) { addChip(t, t); });
+                    chips[0].el.className = 'tag-chip is-active';
+                    bar.style.display = '';
+                }
+
+                render();
+            })();
+        </script>
     </div>
 
 </article>
@@ -392,16 +504,7 @@
         <a class="menu-item" href="/post">博客</a>
         
          · 
-        <a class="menu-item" href="/memos">闪念</a>
-        
-         · 
-        <a class="menu-item" href="/archives">归档</a>
-        
-         · 
-        <a class="menu-item" href="/tags">标签</a>
-        
-         · 
-        <a class="menu-item" href="/links">友链</a>
+        <a class="menu-item" href="/memos">日记</a>
         
     </nav>
 
@@ -409,10 +512,7 @@
     <script>document.querySelector('.current-year').textContent = new Date().getFullYear();</script>
 
     <div class="index_footer">
-         ·
-        <a class="rss" href="/feed.xml" target="_blank" rel="noopener noreferrer">
-            <i class="ri-rss-line"></i>RSS
-        </a>
+        
     </div>
 </footer>
 

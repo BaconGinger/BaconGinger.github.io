@@ -203,16 +203,57 @@ figure { margin: 1.5em 0; }
 
 .description { line-height: 1.9; }
 .description p { margin: 0; }
-.description p + p { margin-top: 0.7em; }
-.description h3 {
-  font-size: 1em;
-  font-weight: 600;
-  margin: 1.1em 0 0.3em;
+.description p + p { margin-top: 0.8em; }
+
+/* 自我介绍里的引导句（名字/身份） */
+.description .intro-lead {
+  font-size: 1.05em;
+  letter-spacing: 0.02em;
 }
+.description .intro-lead strong {
+  font-weight: 600;
+  color: var(--accent-color, #28df99);
+}
+
+/* 小标题：小字号 + 字距 + 淡出，不抢戏 */
+.description h3 {
+  font-size: 0.78em;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  opacity: 0.5;
+  margin: 2em 0 0.5em;
+}
+
+/* 兴趣/内容方向，做成小胶囊标签 */
 .description ul {
-  margin: 0.3em 0;
+  margin: 0.5em 0 0;
   padding: 0;
   list-style: none;
+}
+.description li {
+  display: inline-block;
+  margin: 0.2em 0.25em;
+  padding: 0.2em 0.85em;
+  font-size: 0.88em;
+  line-height: 1.8;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  opacity: 0.7;
+}
+
+/* 联系方式：弱化处理 */
+.description .intro-contact {
+  margin-top: 1.8em !important;
+  font-size: 0.88em;
+  opacity: 0.7;
+}
+.description .intro-contact a { text-decoration: underline; }
+
+.zuobiao {
+  line-height: 1.6;
+  margin-top: 0.1em;
+  margin-bottom: 1em;
 }
 
 .zuobiao i.ico_map {
@@ -437,51 +478,34 @@ figure { margin: 1.5em 0; }
 }
 
 /* ==========================================================================
-   Tags page
+   Tag filter (blog page)
    ========================================================================== */
 
-.tags-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+.tag-filter {
+  margin: 0 0 1.2em;
+  line-height: 2.2;
 }
-.tags-list li {
+
+.tag-chip {
   display: inline-block;
-  margin: 5px 10px;
+  margin: 0 0.5em 0.4em 0;
+  padding: 0.1em 0.9em;
+  font-size: 0.88em;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  opacity: 0.6;
+  transition: opacity 0.2s ease, color 0.2s ease;
 }
-.tags-list a.size-10 {
-  display: inline-block;
-  word-wrap: break-word;
-  transition: transform 0.3s ease-out;
-}
-.tags-list a.size-10:hover {
+
+.tag-chip:hover {
+  opacity: 1;
   color: var(--accent-color);
-  transform: scale(1.1);
-}
-.tags-list a.size-10 span {
-  margin: 0 0.3em;
-  color: #a9a9b3;
 }
 
-/* ==========================================================================
-   Links (友链) page
-   ========================================================================== */
-
-.links-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-.links-list li {
-  padding: 8px 0;
-  border-bottom: 1px dashed #7777;
-}
-.friend-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  vertical-align: middle;
-  margin-right: 8px;
+.tag-chip.is-active {
+  opacity: 1;
+  color: var(--accent-color);
+  border-color: var(--accent-color);
 }
 
 /* ==========================================================================
@@ -661,6 +685,84 @@ figure { margin: 1.5em 0; }
   text-align: center;
   color: #999;
   padding: 40px 0;
+}
+
+/* --- 日记解锁面板 --- */
+
+.diary-lock {
+  padding: 32px 0 16px;
+}
+
+.diary-lock__hint {
+  margin: 0 0 16px;
+  opacity: 0.7;
+}
+
+.diary-lock__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.diary-lock__input {
+  flex: 1 1 12em;
+  min-width: 0;
+  padding: 8px 14px;
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  opacity: 0.75;
+}
+
+.diary-lock__input:focus {
+  outline: none;
+  opacity: 1;
+  border-color: var(--accent-color);
+}
+
+.diary-lock__btn {
+  padding: 8px 22px;
+  font: inherit;
+  color: var(--accent-color);
+  background: transparent;
+  border: 1px solid var(--accent-color);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.diary-lock__btn:hover:not([disabled]) {
+  background: var(--accent-color);
+  color: #fff;
+}
+
+.diary-lock__btn[disabled] {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.diary-lock__msg {
+  min-height: 1.6em;
+  margin: 12px 0 0;
+  font-size: 0.9em;
+  opacity: 0.75;
+}
+
+.diary-actions {
+  margin-top: 24px;
+  text-align: right;
+}
+
+.diary-lock__link {
+  font-size: 0.9em;
+  opacity: 0.55;
+}
+
+.diary-lock__link:hover {
+  opacity: 1;
+  color: var(--accent-color);
 }
 
 /* ==========================================================================
