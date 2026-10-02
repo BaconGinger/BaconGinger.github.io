@@ -17,7 +17,7 @@
 
 
 <link rel="stylesheet" href="/styles/icons.css?v=1">
-<link rel="stylesheet" href="/styles/main.css?v=1">
+<link rel="stylesheet" href="/styles/main.css?v=3">
 
 
 <style>:root{--accent-color:#28df99;}</style>
@@ -401,6 +401,8 @@
             </div>
 
             <div class="diary-actions">
+                <a href="javascript:void(0);" id="diary-export-btn" class="diary-lock__link">导出 memos.json</a>
+                <span class="diary-actions__sep">·</span>
                 <a href="javascript:void(0);" id="diary-lock-btn" class="diary-lock__link">锁定并清除本页缓存</a>
             </div>
         </div>
@@ -636,11 +638,17 @@
             var html = '';
             memos.forEach(function (m) {
                 var date = String(m.createdAt || '').slice(0, 10);
+                // Gridea 的 memo 本来就带 tags 字段，只是原来这页没渲染
+                var tags = (m.tags && m.tags.length)
+                    ? '<span class="memo-tags">' + m.tags.map(function (t) {
+                        return '<span class="memo-tag">' + esc(String(t)) + '</span>';
+                    }).join('') + '</span>'
+                    : '';
                 html += '<div class="memo-item" data-created="' + esc(date) + '">' +
                     '<div class="memo-body"><div class="memo-content">' +
                     renderMarkdown(m.content || '') +
                     '</div></div>' +
-                    '<div class="memo-meta"><time>' + esc(date) + '</time></div></div>';
+                    '<div class="memo-meta"><time>' + esc(date) + '</time>' + tags + '</div></div>';
             });
 
             var list = document.getElementById('memos-list');
@@ -863,7 +871,12 @@
         }
 
         // ---------- 解锁 / 锁定 ----------
-        function showDiary(data) {
+        // 解密出来的那串明文，就是 config/memos.json 本身（加密时是拿原文件字节直接加的），
+        // 所以「导出」只要原样吐出来，拿到的就是一份可以接着用的源文件。
+        var diaryPlaintext = null;
+
+        function showDiary(data, plaintext) {
+            diaryPlaintext = plaintext || null;
             lockPanel.style.display = 'none';
             contentPanel.style.display = '';
             renderDiary(data);
@@ -894,7 +907,7 @@
                 })
                 .then(function (text) {
                     say('');
-                    showDiary(parsePayload(text));
+                    showDiary(parsePayload(text), text);
                     if (input) input.value = '';
                 })
                 .catch(function (err) {
@@ -918,6 +931,34 @@
             lockBtn.addEventListener('click', function () {
                 try { sessionStorage.removeItem(SESSION_KEY); } catch (e) { /* 忽略 */ }
                 window.location.reload();
+            });
+        }
+
+        // ---------- 导出 ----------
+        // 换电脑时用这个：把 memos.json 取回本机，放回 config/ 就能接着写。
+        // 之所以放在网页上而不是命令行：网页跟着 GitHub 走，哪儿都能开；
+        // 命令行工具在本机，盘挂了就一起没了。
+        var exportBtn = document.getElementById('diary-export-btn');
+        if (exportBtn) {
+            exportBtn.addEventListener('click', function () {
+                if (!diaryPlaintext) { say('先解锁才能导出。'); return; }
+
+                var count = 0;
+                try { count = JSON.parse(diaryPlaintext).memos.length; } catch (e) { /* 数不出来就不说 */ }
+                var tip = '导出的 memos.json 是未加密的明文，包含全部'
+                    + (count ? ' ' + count + ' 条' : '')
+                    + '日记，任何拿到这个文件的人都能直接看。\n\n确认下载？';
+                if (!window.confirm(tip)) return;
+
+                var blob = new Blob([diaryPlaintext], { type: 'application/json;charset=utf-8' });
+                var url = URL.createObjectURL(blob);
+                var a = document.createElement('a');
+                a.href = url;
+                a.download = 'memos.json';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
             });
         }
 
@@ -948,7 +989,7 @@
                     return decryptWithKey(key, env);
                 })
                 .then(function (text) {
-                    showDiary(parsePayload(text));
+                    showDiary(parsePayload(text), text);
                 })
                 .catch(function () {
                     // 重新加密过（换了密码或加了新日记）会让旧密钥失效，

@@ -681,6 +681,23 @@ figure { margin: 1.5em 0; }
   align-items: center;
 }
 
+/* 日记标签：日期在左，标签靠右 */
+.memo-tags {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.memo-tag {
+  padding: 1px 9px;
+  font-size: 11px;
+  line-height: 1.7;
+  color: var(--accent-color);
+  background: rgba(40, 223, 153, 0.1);
+  border: 1px solid rgba(40, 223, 153, 0.28);
+  border-radius: 20px;
+}
+
 .memo-expand-btn {
   display: none;
   margin-top: 4px;
@@ -796,6 +813,11 @@ figure { margin: 1.5em 0; }
 .diary-actions {
   margin-top: 24px;
   text-align: right;
+}
+
+.diary-actions__sep {
+  margin: 0 8px;
+  opacity: 0.35;
 }
 
 .diary-lock__link {
@@ -1122,6 +1144,10 @@ body.dark-theme .theme-toggle-moon { display: inline-block !important; color: #F
 }
 .dark-theme .memo-content { color: var(--dark-text); }
 .dark-theme .memo-meta    { color: #666; }
+.dark-theme .memo-tag {
+  background: rgba(40, 223, 153, 0.14);
+  border-color: rgba(40, 223, 153, 0.35);
+}
 .dark-theme .memo-body.collapsed::after {
   background: linear-gradient(transparent, rgba(41, 42, 45, 0.95));
 }
