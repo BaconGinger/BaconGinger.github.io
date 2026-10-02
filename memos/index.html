@@ -14,7 +14,10 @@
 
 
 <link rel="shortcut icon" href="/favicon.ico?v=2">
-<link rel="stylesheet" href="/styles/main.min.css">
+
+
+<link rel="stylesheet" href="/styles/icons.css?v=1">
+<link rel="stylesheet" href="/styles/main.css?v=1">
 
 
 <style>:root{--accent-color:#28df99;}</style>
@@ -293,7 +296,7 @@
         <div class="mod-head__logo">
             <a href="/">
                 
-                <img class="avatar" alt="avatar" src="https://cdn.jsdelivr.net/gh/BaconGinger/BaconGinger.github.io@main/images/avatar.png">
+                <img class="avatar" alt="avatar" src="/images/avatar.png">
                 
             </a>
         </div>
@@ -370,6 +373,8 @@
 
         
         <div id="diary-content" style="display:none;">
+            <div class="heatmap-nav" id="heatmap-nav"></div>
+
             <div class="heatmap-wrap">
                 <div id="heatmap-root"></div>
                 <div class="heatmap-footer">
@@ -569,6 +574,58 @@
             return '密码不对，或者文件已损坏。';
         }
 
+        // ---------- 分页状态（热力图跳转也要用，所以放在外层）----------
+        var allItems = [];
+        var currentPage = 1;
+        var totalPages = 1;
+
+        function goToPage(p) {
+            if (p < 1 || p > totalPages) return;
+            currentPage = p;
+            var start = (currentPage - 1) * MEMO_PER_PAGE;
+            var end = currentPage * MEMO_PER_PAGE;
+            for (var i = 0; i < allItems.length; i++) {
+                if (i >= start && i < end) allItems[i].classList.remove('memo-hide');
+                else allItems[i].classList.add('memo-hide');
+            }
+            var prevBtn = document.getElementById('memo-prev-btn');
+            var nextBtn = document.getElementById('memo-next-btn');
+            var pageInfo = document.getElementById('memo-page-info');
+            var pag = document.getElementById('memo-pagination');
+            if (prevBtn) prevBtn.className = currentPage <= 1 ? 'disabled' : '';
+            if (nextBtn) nextBtn.className = currentPage >= totalPages ? 'disabled' : '';
+            if (pageInfo) pageInfo.textContent = currentPage + ' / ' + totalPages;
+            if (pag) pag.style.display = totalPages <= 1 ? 'none' : '';
+        }
+
+        window.memoNextPage = function () {
+            if (currentPage < totalPages) { goToPage(currentPage + 1); window.scrollTo(0, 0); }
+        };
+        window.memoPrevPage = function () {
+            if (currentPage > 1) { goToPage(currentPage - 1); window.scrollTo(0, 0); }
+        };
+
+        // 从热力图点某天 → 翻到那一页并高亮
+        function jumpToDate(dateStr) {
+            var idx = -1;
+            for (var i = 0; i < allItems.length; i++) {
+                if (allItems[i].getAttribute('data-created') === dateStr) { idx = i; break; }
+            }
+            if (idx < 0) return;
+
+            goToPage(Math.floor(idx / MEMO_PER_PAGE) + 1);
+            var el = allItems[idx];
+            var body = el.querySelector('.memo-body');
+            var btn = el.querySelector('.memo-expand-btn');
+            if (btn && body && body.classList.contains('collapsed')) btn.click();
+
+            setTimeout(function () {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                el.classList.add('memo-flash');
+                setTimeout(function () { el.classList.remove('memo-flash'); }, 2400);
+            }, 0);
+        }
+
         // ---------- 渲染 ----------
         function renderDiary(data) {
             var memos = (data && data.memos) ? data.memos.slice() : [];
@@ -577,10 +634,9 @@
             });
 
             var html = '';
-            memos.forEach(function (m, i) {
+            memos.forEach(function (m) {
                 var date = String(m.createdAt || '').slice(0, 10);
-                html += '<div class="memo-item' + (i >= MEMO_PER_PAGE ? ' memo-hide' : '') +
-                    '" data-created="' + esc(date) + '">' +
+                html += '<div class="memo-item" data-created="' + esc(date) + '">' +
                     '<div class="memo-body"><div class="memo-content">' +
                     renderMarkdown(m.content || '') +
                     '</div></div>' +
@@ -590,34 +646,52 @@
             var list = document.getElementById('memos-list');
             list.innerHTML = html || '<p class="memos-empty">还没有日记</p>';
 
+            allItems = Array.prototype.slice.call(document.querySelectorAll('.memo-item'));
+            totalPages = Math.ceil(allItems.length / MEMO_PER_PAGE) || 1;
+
             buildHeatmap();
+            // 必须赶在分页收起之前做：display:none 的元素 scrollHeight 是 0，
+            // 那样第 2 页往后的长条目永远拿不到「展开全文」按钮
             wireCollapse();
-            wirePagination();
+            goToPage(1);
         }
 
         // ---------- GitHub 风格热力图 ----------
+        function fmtYmd(d) {
+            return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') +
+                '-' + String(d.getDate()).padStart(2, '0');
+        }
+
+        // 范围是「最早一条日记所在的那个星期 → 今天」，
+        // 原来是写死只看 52 周，更早的日记在图上根本不存在
         function buildHeatmap() {
             var root = document.getElementById('heatmap-root');
             if (!root) return;
 
-            var items = document.querySelectorAll('.memo-item');
             var heatmapData = {};
-            items.forEach(function (item) {
+            allItems.forEach(function (item) {
                 var d = item.getAttribute('data-created');
                 if (d) {
-                    var dateStr = d.substring(0, 10);
-                    heatmapData[dateStr] = (heatmapData[dateStr] || 0) + 1;
+                    var k = d.slice(0, 10);
+                    heatmapData[k] = (heatmapData[k] || 0) + 1;
                 }
             });
+            var dates = Object.keys(heatmapData).sort();
 
             var today = new Date();
             today.setHours(0, 0, 0, 0);
-            var endDay = today.getDay();
-            var totalDays = 52 * 7 + endDay + 1;
-            var startDate = new Date(today);
-            startDate.setDate(startDate.getDate() - totalDays + 1);
-            startDate.setDate(startDate.getDate() - startDate.getDay());
 
+            var startDate;
+            if (dates.length) {
+                startDate = new Date(dates[0] + 'T00:00:00');
+                startDate.setDate(startDate.getDate() - startDate.getDay());
+            } else {
+                startDate = new Date(today);
+                startDate.setDate(startDate.getDate() - 52 * 7 + 1);
+                startDate.setDate(startDate.getDate() - startDate.getDay());
+            }
+
+            var totalDays = Math.round((today - startDate) / 86400000) + 1;
             var totalWeeks = Math.ceil(totalDays / 7);
 
             var weeks = [];
@@ -626,65 +700,139 @@
                 for (var d = 0; d < 7; d++) {
                     var cellDate = new Date(startDate);
                     cellDate.setDate(cellDate.getDate() + w * 7 + d);
-                    var key = cellDate.getFullYear() + '-' + String(cellDate.getMonth() + 1).padStart(2, '0') + '-' + String(cellDate.getDate()).padStart(2, '0');
+                    var key = fmtYmd(cellDate);
                     var count = heatmapData[key] || 0;
                     var level = count === 0 ? 0 : count === 1 ? 1 : count <= 3 ? 2 : count <= 5 ? 3 : 4;
-                    week.push({ date: cellDate, key: key, count: count, level: level, future: cellDate > today, month: cellDate.getMonth() });
+                    week.push({ date: cellDate, key: key, count: count, level: level, future: cellDate > today });
                 }
                 weeks.push(week);
             }
 
-            var monthLabels = [];
-            var lastMonth = -1;
-            for (var w2 = 0; w2 < weeks.length; w2++) {
-                var firstDay = weeks[w2][0];
-                if (!firstDay.future && firstDay.month !== lastMonth) {
-                    monthLabels.push({ weekIndex: w2, label: MONTHS[firstDay.month] });
-                    lastMonth = firstDay.month;
+            // 表头两行（年份 + 月份）。某列只要和上一列不同年/月就开一个新标签，
+            // 然后用 colspan 一直铺到下一个标签，避免长标签互相压字
+            function headerRow(cls, pick) {
+                var out = '';
+                var i = 0;
+                while (i < totalWeeks) {
+                    var label = pick(i);
+                    if (label) {
+                        var j = i + 1;
+                        while (j < totalWeeks && !pick(j)) j++;
+                        out += '<td colspan="' + (j - i) + '" class="' + cls + '">' + label + '</td>';
+                        i = j;
+                    } else {
+                        out += '<td class="' + cls + '"></td>';
+                        i++;
+                    }
                 }
+                return out;
             }
 
-            var html = '<table style="min-width: 600px;">';
+            var yearRow = headerRow('heatmap-year-label', function (w) {
+                if (weeks[w][0].future) return null;
+                var y = weeks[w][0].date.getFullYear();
+                return (w === 0 || y !== weeks[w - 1][0].date.getFullYear()) ? y + '年' : null;
+            });
 
-            html += '<tr><td class="heatmap-day-label"></td>';
-            var monthColIdx = 0;
-            for (var w3 = 0; w3 < totalWeeks; w3++) {
-                if (monthColIdx < monthLabels.length && monthLabels[monthColIdx].weekIndex === w3) {
-                    var nextIdx = monthColIdx + 1 < monthLabels.length ? monthLabels[monthColIdx + 1].weekIndex : totalWeeks;
-                    var span = nextIdx - w3;
-                    html += '<td colspan="' + span + '" class="heatmap-month-label">' + monthLabels[monthColIdx].label + '</td>';
-                    w3 += span - 1;
-                    monthColIdx++;
-                } else {
-                    html += '<td class="heatmap-month-label"></td>';
-                }
-            }
-            html += '</tr>';
+            var monthRow = headerRow('heatmap-month-label', function (w) {
+                if (weeks[w][0].future) return null;
+                var m = weeks[w][0].date.getMonth();
+                return (w === 0 || m !== weeks[w - 1][0].date.getMonth()) ? MONTHS[m] : null;
+            });
+
+            // 每列 = 13px 格子 + 3px 间隔，左边再留 34px 给星期标签
+            var html = '<table style="min-width:' + (totalWeeks * 16 + 34) + 'px;">';
+            html += '<tr><td class="heatmap-day-label"></td>' + yearRow + '</tr>';
+            html += '<tr><td class="heatmap-day-label"></td>' + monthRow + '</tr>';
 
             for (var d2 = 0; d2 < 7; d2++) {
                 html += '<tr>';
                 html += '<td class="heatmap-day-label">' + DAYS[d2] + '</td>';
-                for (var w4 = 0; w4 < weeks.length; w4++) {
+                for (var w4 = 0; w4 < totalWeeks; w4++) {
                     var c = weeks[w4][d2];
                     if (c.future) {
                         html += '<td></td>';
                     } else {
-                        html += '<td class="cell" data-level="' + c.level + '" style="background:' + COLORS[c.level] + ';" title="' + c.key + ': ' + c.count + ' 条日记"></td>';
+                        html += '<td class="cell' + (c.count ? ' has-data' : '') +
+                            '" data-level="' + c.level + '" data-date="' + c.key + '"' +
+                            ' style="background:' + COLORS[c.level] + ';"' +
+                            ' title="' + c.key + (c.count ? '：' + c.count + ' 条，点击查看' : '：没有日记') + '"></td>';
                     }
                 }
                 html += '</tr>';
             }
-
             html += '</table>';
             root.innerHTML = html;
 
-            var total = document.getElementById('heatmap-total');
-            if (total) total.textContent = '过去一年共 ' + items.length + ' 条日记';
+            // 点了有日记的格子就跳到那天
+            root.onclick = function (ev) {
+                var td = ev.target;
+                if (!td || td.tagName !== 'TD' || !td.classList.contains('has-data')) return;
+                var d = td.getAttribute('data-date');
+                if (d) jumpToDate(d);
+            };
 
+            var total = document.getElementById('heatmap-total');
+            if (total) {
+                total.textContent = '共 ' + allItems.length + ' 条日记' +
+                    (dates.length ? ' · ' + dates[0] + ' 起' : '') + ' · 点格子跳到那天';
+            }
+
+            buildYearNav(weeks);
+
+            // 默认滚到最右边（最近的日子）
             setTimeout(function () {
                 var wrap = document.querySelector('.heatmap-wrap');
                 if (wrap) wrap.scrollLeft = wrap.scrollWidth;
             }, 100);
+        }
+
+        // 年份按钮：点一下把热力图横向滚到那一年
+        function buildYearNav(weeks) {
+            var nav = document.getElementById('heatmap-nav');
+            var wrap = document.querySelector('.heatmap-wrap');
+            var root = document.getElementById('heatmap-root');
+            if (!nav || !wrap || !root) return;
+
+            var years = [];
+            for (var w = 0; w < weeks.length; w++) {
+                var y = weeks[w][0].date.getFullYear();
+                if (years.indexOf(y) < 0) years.push(y);
+            }
+            if (years.length < 2) { nav.innerHTML = ''; return; }
+
+            nav.innerHTML = years.map(function (y) {
+                return '<button type="button" data-year="' + y + '">' + y + ' 年</button>';
+            }).join('');
+
+            var btns = nav.querySelectorAll('button');
+            function scrollToYear(y) {
+                var idx = 0;
+                for (var w2 = 0; w2 < weeks.length; w2++) {
+                    if (weeks[w2][0].date.getFullYear() === y) { idx = w2; break; }
+                }
+                var tbl = root.querySelector('table');
+                // rows[0] 年份、rows[1] 月份、rows[2] 才是第一个格子行；cells[0] 是星期标签
+                var row = tbl && tbl.rows[2];
+                var td = row && row.cells[idx + 1];
+                if (!td) return;
+                var wrapRect = wrap.getBoundingClientRect();
+                var tdRect = td.getBoundingClientRect();
+                wrap.scrollTo({
+                    left: wrap.scrollLeft + (tdRect.left - wrapRect.left) - 40,
+                    behavior: 'smooth'
+                });
+            }
+
+            for (var i = 0; i < btns.length; i++) {
+                (function (btn) {
+                    btn.addEventListener('click', function () {
+                        for (var j = 0; j < btns.length; j++) btns[j].classList.remove('active');
+                        btn.classList.add('active');
+                        scrollToYear(+btn.getAttribute('data-year'));
+                    });
+                })(btns[i]);
+            }
         }
 
         // ---------- 长内容折叠 ----------
@@ -712,43 +860,6 @@
                     body.parentNode.insertBefore(btn, body.nextSibling);
                 }
             });
-        }
-
-        // ---------- 分页 ----------
-        function wirePagination() {
-            var items = document.querySelectorAll('.memo-item');
-            var totalPages = Math.ceil(items.length / MEMO_PER_PAGE) || 1;
-            var currentPage = 1;
-            var pag = document.getElementById('memo-pagination');
-            if (!pag) return;
-
-            function update() {
-                var start = (currentPage - 1) * MEMO_PER_PAGE;
-                var end = currentPage * MEMO_PER_PAGE;
-                for (var i = 0; i < items.length; i++) {
-                    if (i >= start && i < end) {
-                        items[i].classList.remove('memo-hide');
-                    } else {
-                        items[i].classList.add('memo-hide');
-                    }
-                }
-                var prevBtn = document.getElementById('memo-prev-btn');
-                var nextBtn = document.getElementById('memo-next-btn');
-                var pageInfo = document.getElementById('memo-page-info');
-                if (prevBtn) prevBtn.className = currentPage <= 1 ? 'disabled' : '';
-                if (nextBtn) nextBtn.className = currentPage >= totalPages ? 'disabled' : '';
-                if (pageInfo) pageInfo.textContent = currentPage + ' / ' + totalPages;
-                pag.style.display = totalPages <= 1 ? 'none' : '';
-            }
-
-            window.memoNextPage = function () {
-                if (currentPage < totalPages) { currentPage++; update(); window.scrollTo(0, 0); }
-            };
-            window.memoPrevPage = function () {
-                if (currentPage > 1) { currentPage--; update(); window.scrollTo(0, 0); }
-            };
-
-            update();
         }
 
         // ---------- 解锁 / 锁定 ----------

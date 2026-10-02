@@ -551,6 +551,49 @@ figure { margin: 1.5em 0; }
   padding-right: 6px;
   line-height: 1;
 }
+.heatmap-year-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #777;
+  text-align: left;
+  padding: 0 0 3px 0;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* 有日记的格子可以点，点了跳到那天的条目 */
+.heatmap-wrap td.cell.has-data { cursor: pointer; }
+
+.heatmap-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.heatmap-nav button {
+  font-family: inherit;
+  font-size: 12px;
+  padding: 2px 12px;
+  color: var(--accent-color);
+  background: none;
+  border: 1px solid rgba(40, 223, 153, 0.3);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.heatmap-nav button:hover { background: rgba(40, 223, 153, 0.1); }
+.heatmap-nav button.active {
+  background: var(--accent-color);
+  border-color: var(--accent-color);
+  color: #fff;
+}
+
+/* 从热力图跳过来的那条，闪一下好找 */
+.memo-item.memo-flash { animation: memo-flash 2.2s ease; }
+@keyframes memo-flash {
+  0%, 45% { box-shadow: 0 0 0 3px rgba(40, 223, 153, 0.55); }
+  100%    { box-shadow: 0 0 0 3px rgba(40, 223, 153, 0); }
+}
 
 .heatmap-footer {
   display: flex;
@@ -1058,6 +1101,13 @@ body.dark-theme .theme-toggle-moon { display: inline-block !important; color: #F
 
 .dark-theme .heatmap-month-label,
 .dark-theme .heatmap-day-label { color: #666; }
+.dark-theme .heatmap-year-label { color: #999; }
+.dark-theme .heatmap-nav button { color: var(--accent-color); }
+.dark-theme .memo-item.memo-flash { animation-name: memo-flash-dark; }
+@keyframes memo-flash-dark {
+  0%, 45% { box-shadow: 0 0 0 3px rgba(40, 223, 153, 0.5); }
+  100%    { box-shadow: 0 0 0 3px rgba(40, 223, 153, 0); }
+}
 .dark-theme .heatmap-wrap td.cell[data-level="0"] { background: #161b22 !important; }
 .dark-theme .heatmap-wrap td.cell[data-level="1"] { background: #0e4429 !important; }
 .dark-theme .heatmap-wrap td.cell[data-level="2"] { background: #006d32 !important; }
