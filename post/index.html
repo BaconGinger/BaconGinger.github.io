@@ -17,7 +17,7 @@
 
 
 <link rel="stylesheet" href="/styles/icons.css?v=1">
-<link rel="stylesheet" href="/styles/main.css?v=3">
+<link rel="stylesheet" href="/styles/main.css?v=4">
 
 
 <style>:root{--accent-color:#28df99;}</style>
@@ -302,6 +302,19 @@
         </div>
     </div>
 
+    <nav class="mod-head__nav">
+        
+        
+        <a class="menu-item" href="/">首页</a>
+        
+        <span class="menu-sep">·</span>
+        <a class="menu-item" href="/post">博客</a>
+        
+        <span class="menu-sep">·</span>
+        <a class="menu-item" href="/memos">日记</a>
+        
+    </nav>
+
     <div class="mod-head__right">
         <span>
             <button id="theme-toggle-sun" class="tiptap-button theme-toggle-sun" aria-label="Switch to dark mode">
@@ -367,31 +380,111 @@
 
             
             
-            <li class="post-item" data-tags="|紫罗兰永恒花园|动漫|"><time
-                    class="mod-archive__time" datetime="2026-10-02">2026-10-02</time> <span>&nbsp;&nbsp;&nbsp;</span>
-                <a href="/post/ep03-08/">
+            <li class="post-item" data-tags="|紫罗兰永恒花园|动漫|"
+                data-cats="|动漫|"><time
+                    class="mod-archive__time" datetime="2024-10-03">2024-10-03</time> <span>&nbsp;&nbsp;&nbsp;</span>
+                <a href="/post/ep08/">
                     
-                    EP03/08
+                    EP08
                 </a>
             </li>
             
             
             
-            <li class="post-item" data-tags="|Friends|美剧|"><time
-                    class="mod-archive__time" datetime="2026-10-02">2026-10-02</time> <span>&nbsp;&nbsp;&nbsp;</span>
-                <a href="/post/friends/">
+            <li class="post-item" data-tags="|紫罗兰永恒花园|动漫|"
+                data-cats="|动漫|"><time
+                    class="mod-archive__time" datetime="2024-08-22">2024-08-22</time> <span>&nbsp;&nbsp;&nbsp;</span>
+                <a href="/post/ep07/">
                     
-                    Friends S03E12~21
+                    EP07
                 </a>
             </li>
             
             
             
-            <li class="post-item" data-tags="|紫罗兰永恒花园|动漫|"><time
-                    class="mod-archive__time" datetime="2026-04-22">2026-04-22</time> <span>&nbsp;&nbsp;&nbsp;</span>
+            <li class="post-item" data-tags="|紫罗兰永恒花园|动漫|"
+                data-cats="|动漫|"><time
+                    class="mod-archive__time" datetime="2024-08-21">2024-08-21</time> <span>&nbsp;&nbsp;&nbsp;</span>
+                <a href="/post/ep06/">
+                    
+                    EP06
+                </a>
+            </li>
+            
+            
+            
+            <li class="post-item" data-tags="|紫罗兰永恒花园|动漫|"
+                data-cats="|动漫|"><time
+                    class="mod-archive__time" datetime="2024-08-20">2024-08-20</time> <span>&nbsp;&nbsp;&nbsp;</span>
+                <a href="/post/ep05/">
+                    
+                    EP05
+                </a>
+            </li>
+            
+            
+            
+            <li class="post-item" data-tags="|紫罗兰永恒花园|动漫|"
+                data-cats="|动漫|"><time
+                    class="mod-archive__time" datetime="2024-08-18">2024-08-18</time> <span>&nbsp;&nbsp;&nbsp;</span>
+                <a href="/post/ep03-04/">
+                    
+                    EP03/04
+                </a>
+            </li>
+            
+            
+            
+            <li class="post-item" data-tags="|紫罗兰永恒花园|动漫|"
+                data-cats="|动漫|"><time
+                    class="mod-archive__time" datetime="2024-08-17">2024-08-17</time> <span>&nbsp;&nbsp;&nbsp;</span>
                 <a href="/post/ep01-02/">
                     
                     EP01/02
+                </a>
+            </li>
+            
+            
+            
+            <li class="post-item" data-tags="|Friends|美剧|"
+                data-cats="|影视|"><time
+                    class="mod-archive__time" datetime="2024-08-15">2024-08-15</time> <span>&nbsp;&nbsp;&nbsp;</span>
+                <a href="/post/s03e21/">
+                    
+                    S03E21 A Chick And A Duck
+                </a>
+            </li>
+            
+            
+            
+            <li class="post-item" data-tags="|Friends|美剧|"
+                data-cats="|影视|"><time
+                    class="mod-archive__time" datetime="2024-08-08">2024-08-08</time> <span>&nbsp;&nbsp;&nbsp;</span>
+                <a href="/post/s03e20/">
+                    
+                    S03E20 The Dollhouse(娃娃屋)
+                </a>
+            </li>
+            
+            
+            
+            <li class="post-item" data-tags="|Friends|美剧|"
+                data-cats="|影视|"><time
+                    class="mod-archive__time" datetime="2024-08-03">2024-08-03</time> <span>&nbsp;&nbsp;&nbsp;</span>
+                <a href="/post/s03e19/">
+                    
+                    S03E19 The Tiny T-Shirt
+                </a>
+            </li>
+            
+            
+            
+            <li class="post-item" data-tags="|Friends|美剧|"
+                data-cats="|影视|"><time
+                    class="mod-archive__time" datetime="2024-08-01">2024-08-01</time> <span>&nbsp;&nbsp;&nbsp;</span>
+                <a href="/post/s03e18/">
+                    
+                    S03E18 The Hypnosis Tape(催眠录音带)
                 </a>
             </li>
             
@@ -400,6 +493,10 @@
 
         <div class="posts-nav" id="posts-nav">
             
+            
+            <div style="float:right;">
+                <a href="/post/page/2/" class="page-numbers current flip">下一页</a>
+            </div>
             
 
             
@@ -413,15 +510,39 @@
                 var items = Array.prototype.slice.call(list.querySelectorAll('li.post-item'));
                 if (!items.length) return;
 
-                // 每篇文章的标签，模板里写成 |tag1|tag2| 的形式便于切分
-                var tagIndex = [];
+                // 每篇文章的标签 / 分类，模板里写成 |tag1|tag2| 的形式便于切分
+                var parseList = function (li, attr) {
+                    return (li.getAttribute(attr) || '').split('|').filter(function (t) { return t !== ''; });
+                };
+
+                var tagIndex = [];   // 所有标签，按文章顺序去重
+                var catGroups = [];  // [{ name: '动漫', tags: ['紫罗兰永恒花园', '动漫'] }, ...]
+                var looseTags = [];  // 不属于任何分类的标签
+
                 items.forEach(function (li) {
-                    var raw = li.getAttribute('data-tags') || '';
-                    var tags = raw.split('|').filter(function (t) { return t !== ''; });
+                    var tags = parseList(li, 'data-tags');
+                    var cats = parseList(li, 'data-cats');
                     li.dataset.tagList = tags.join('\u0001');
                     tags.forEach(function (t) {
                         if (tagIndex.indexOf(t) === -1) tagIndex.push(t);
                     });
+                    // 一篇文章的每个标签，都登记到这篇文章的每个分类下
+                    cats.forEach(function (c) {
+                        var group = null;
+                        catGroups.forEach(function (g) { if (g.name === c) group = g; });
+                        if (!group) {
+                            group = { name: c, tags: [] };
+                            catGroups.push(group);
+                        }
+                        tags.forEach(function (t) {
+                            if (group.tags.indexOf(t) === -1) group.tags.push(t);
+                        });
+                    });
+                });
+
+                tagIndex.forEach(function (t) {
+                    var claimed = catGroups.some(function (g) { return g.tags.indexOf(t) !== -1; });
+                    if (!claimed) looseTags.push(t);
                 });
 
                 var nav = document.getElementById('posts-nav');
@@ -485,11 +606,11 @@
                     }
                 };
 
-                // 标签筛选栏：由文章自身的标签动态生成
+                // 标签筛选栏：由文章自身的标签动态生成，有分类时按分类分组
                 var bar = document.getElementById('tag-filter');
                 if (bar && tagIndex.length) {
                     var chips = [];
-                    var addChip = function (label, value) {
+                    var addChip = function (label, value, parent) {
                         var a = document.createElement('a');
                         a.href = 'javascript:void(0);';
                         a.className = 'tag-chip';
@@ -502,11 +623,29 @@
                             });
                             render();
                         };
-                        bar.appendChild(a);
+                        parent.appendChild(a);
                         chips.push({ el: a, value: value });
                     };
-                    addChip('全部', null);
-                    tagIndex.forEach(function (t) { addChip(t, t); });
+                    var addGroup = function (label, tags) {
+                        if (!tags.length) return;
+                        var box = document.createElement('span');
+                        box.className = 'tag-group';
+                        var name = document.createElement('span');
+                        name.className = 'tag-group__label';
+                        name.textContent = label;
+                        box.appendChild(name);
+                        tags.forEach(function (t) { addChip(t, t, box); });
+                        bar.appendChild(box);
+                    };
+
+                    addChip('全部', null, bar);
+                    if (catGroups.length) {
+                        catGroups.forEach(function (g) { addGroup(g.name, g.tags); });
+                        addGroup('其他', looseTags);
+                    } else {
+                        // 一篇文章都没配分类时，退回原来的一排平铺
+                        tagIndex.forEach(function (t) { addChip(t, t, bar); });
+                    }
                     chips[0].el.className = 'tag-chip is-active';
                     bar.style.display = '';
                 }

@@ -17,7 +17,7 @@
 
 
 <link rel="stylesheet" href="/styles/icons.css?v=1">
-<link rel="stylesheet" href="/styles/main.css?v=3">
+<link rel="stylesheet" href="/styles/main.css?v=4">
 
 
 <style>:root{--accent-color:#28df99;}</style>
@@ -251,19 +251,16 @@
     <title>博客 | BaconGinger&#39;s blog</title>
 
     
-<meta http-equiv="refresh" content="0;url=/post">
-<meta name="robots" content="noindex">
-
-<link rel="canonical" href="https://baconginger.github.io/tag/gridea/">
+<link rel="canonical" href="https://baconginger.github.io/post/page/2/">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"BaconGinger's blog","url":"https://baconginger.github.io","description":"","potentialAction":{"@type":"SearchAction","query-input":"required name=search_term_string","target":"https://baconginger.github.io/search?q={search_term_string}"}}</script>
 <meta property="og:title" content="BaconGinger's blog">
 <meta property="og:description" content="">
-<meta property="og:url" content="https://baconginger.github.io/tag/gridea/">
+<meta property="og:url" content="https://baconginger.github.io/post/page/2/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BaconGinger's blog">
 <meta property="og:image" content="/images/avatar.png">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:url" content="https://baconginger.github.io/tag/gridea/">
+<meta name="twitter:url" content="https://baconginger.github.io/post/page/2/">
 <meta name="twitter:title" content="BaconGinger's blog">
 <meta name="twitter:description" content="">
 <meta name="twitter:image" content="/images/avatar.png">
@@ -304,6 +301,19 @@
             </a>
         </div>
     </div>
+
+    <nav class="mod-head__nav">
+        
+        
+        <a class="menu-item" href="/">首页</a>
+        
+        <span class="menu-sep">·</span>
+        <a class="menu-item" href="/post">博客</a>
+        
+        <span class="menu-sep">·</span>
+        <a class="menu-item" href="/memos">日记</a>
+        
+    </nav>
 
     <div class="mod-head__right">
         <span>
@@ -355,20 +365,251 @@
 </header>
 <!-- <a href="#" id="back-to-top" style="display: inline;"> ^ </a> -->
 
-<article class="mod-post mod-post__type-post">
+<article class="mod-archive">
 
-    <header>
-        <h1 class="mod-post__title">
-            博客
-        </h1>
-    </header>
+    <div class="mod-archive__item">
+        <div class="mod-archive__year"></div>
 
-    <div class="mod-post__entry wzulli">
-        <p>标签已合并到博客页面，正在跳转… 如果没有自动跳转，请点<a href="/post">这里</a>。</p>
+        <div class="tag-filter" id="tag-filter" style="display:none;"></div>
+
+        <ul class="mod-archive__list">
+            
+            
+
+            
+
+            
+            
+            <li class="post-item" data-tags="|Friends|美剧|"
+                data-cats="|影视|"><time
+                    class="mod-archive__time" datetime="2024-07-31">2024-07-31</time> <span>&nbsp;&nbsp;&nbsp;</span>
+                <a href="/post/s03e17/">
+                    
+                    S03E17 Without The Ski Trip
+                </a>
+            </li>
+            
+            
+            
+            <li class="post-item" data-tags="|Friends|美剧|"
+                data-cats="|影视|"><time
+                    class="mod-archive__time" datetime="2024-07-29">2024-07-29</time> <span>&nbsp;&nbsp;&nbsp;</span>
+                <a href="/post/s03e16/">
+                    
+                    S03E16 The Morning After
+                </a>
+            </li>
+            
+            
+            
+            <li class="post-item" data-tags="|Friends|美剧|"
+                data-cats="|影视|"><time
+                    class="mod-archive__time" datetime="2024-07-28">2024-07-28</time> <span>&nbsp;&nbsp;&nbsp;</span>
+                <a href="/post/s03e15/">
+                    
+                    S03E15 Ross And Rachel Take A Break
+                </a>
+            </li>
+            
+            
+            
+            <li class="post-item" data-tags="|Friends|美剧|"
+                data-cats="|影视|"><time
+                    class="mod-archive__time" datetime="2024-07-27">2024-07-27</time> <span>&nbsp;&nbsp;&nbsp;</span>
+                <a href="/post/s03e14/">
+                    
+                    S03E14 Phoebes Ex-Partner
+                </a>
+            </li>
+            
+            
+            
+            <li class="post-item" data-tags="|Friends|美剧|"
+                data-cats="|影视|"><time
+                    class="mod-archive__time" datetime="2024-07-26">2024-07-26</time> <span>&nbsp;&nbsp;&nbsp;</span>
+                <a href="/post/s03e13/">
+                    
+                    S03E13 Monica and Richard Are Just Friends
+                </a>
+            </li>
+            
+            
+            
+            <li class="post-item" data-tags="|Friends|美剧|"
+                data-cats="|影视|"><time
+                    class="mod-archive__time" datetime="2024-07-25">2024-07-25</time> <span>&nbsp;&nbsp;&nbsp;</span>
+                <a href="/post/s03e12/">
+                    
+                    S03E12 All The Jealousy
+                </a>
+            </li>
+            
+            
+        </ul>
+
+        <div class="posts-nav" id="posts-nav">
+            
+            
+
+            
+            <a href="/post/" class="page-numbers current flip">上一页</a>
+            
+            
+        </div>
+
+        <script>
+            (function () {
+                var list = document.querySelector('.mod-archive__list');
+                if (!list) return;
+                var items = Array.prototype.slice.call(list.querySelectorAll('li.post-item'));
+                if (!items.length) return;
+
+                // 每篇文章的标签 / 分类，模板里写成 |tag1|tag2| 的形式便于切分
+                var parseList = function (li, attr) {
+                    return (li.getAttribute(attr) || '').split('|').filter(function (t) { return t !== ''; });
+                };
+
+                var tagIndex = [];   // 所有标签，按文章顺序去重
+                var catGroups = [];  // [{ name: '动漫', tags: ['紫罗兰永恒花园', '动漫'] }, ...]
+                var looseTags = [];  // 不属于任何分类的标签
+
+                items.forEach(function (li) {
+                    var tags = parseList(li, 'data-tags');
+                    var cats = parseList(li, 'data-cats');
+                    li.dataset.tagList = tags.join('\u0001');
+                    tags.forEach(function (t) {
+                        if (tagIndex.indexOf(t) === -1) tagIndex.push(t);
+                    });
+                    // 一篇文章的每个标签，都登记到这篇文章的每个分类下
+                    cats.forEach(function (c) {
+                        var group = null;
+                        catGroups.forEach(function (g) { if (g.name === c) group = g; });
+                        if (!group) {
+                            group = { name: c, tags: [] };
+                            catGroups.push(group);
+                        }
+                        tags.forEach(function (t) {
+                            if (group.tags.indexOf(t) === -1) group.tags.push(t);
+                        });
+                    });
+                });
+
+                tagIndex.forEach(function (t) {
+                    var claimed = catGroups.some(function (g) { return g.tags.indexOf(t) !== -1; });
+                    if (!claimed) looseTags.push(t);
+                });
+
+                var nav = document.getElementById('posts-nav');
+                var nextContainer = document.getElementById('next-page-container');
+                var prevBtn = document.getElementById('prev-page-btn');
+                var pageInfo = document.getElementById('page-info');
+                var perPageEl = document.getElementById('pagination-config');
+                var perPage = perPageEl ? parseInt(perPageEl.getAttribute('data-per-page'), 10) : 10;
+                if (!perPage || isNaN(perPage) || perPage < 1) perPage = 10;
+                var clientPaging = !!(nextContainer && prevBtn);
+
+                var activeTag = null;
+                var currentPage = 1;
+
+                function render() {
+                    var pool = items.filter(function (li) {
+                        if (!activeTag) return true;
+                        return li.dataset.tagList.split('\u0001').indexOf(activeTag) !== -1;
+                    });
+
+                    if (activeTag || !clientPaging) {
+                        // 筛选时不分页，符合条件的全部展示
+                        items.forEach(function (li) {
+                            li.style.display = pool.indexOf(li) !== -1 ? '' : 'none';
+                        });
+                    } else {
+                        var start = (currentPage - 1) * perPage;
+                        var end = start + perPage;
+                        items.forEach(function (li, i) {
+                            li.style.display = (i >= start && i < end) ? '' : 'none';
+                        });
+                    }
+
+                    if (!clientPaging) return;
+
+                    if (activeTag) {
+                        if (nav) nav.style.display = 'none';
+                        return;
+                    }
+                    if (nav) nav.style.display = '';
+
+                    var totalPages = Math.max(1, Math.ceil(items.length / perPage));
+                    nextContainer.style.display = currentPage >= totalPages ? 'none' : 'block';
+                    prevBtn.style.display = currentPage > 1 ? 'inline' : 'none';
+                    if (pageInfo) pageInfo.textContent = currentPage + ' / ' + totalPages;
+                }
+
+                window.nextPage = function () {
+                    var totalPages = Math.max(1, Math.ceil(items.length / perPage));
+                    if (currentPage < totalPages) {
+                        currentPage++;
+                        render();
+                        window.scrollTo(0, 0);
+                    }
+                };
+                window.prevPage = function () {
+                    if (currentPage > 1) {
+                        currentPage--;
+                        render();
+                        window.scrollTo(0, 0);
+                    }
+                };
+
+                // 标签筛选栏：由文章自身的标签动态生成，有分类时按分类分组
+                var bar = document.getElementById('tag-filter');
+                if (bar && tagIndex.length) {
+                    var chips = [];
+                    var addChip = function (label, value, parent) {
+                        var a = document.createElement('a');
+                        a.href = 'javascript:void(0);';
+                        a.className = 'tag-chip';
+                        a.textContent = label;
+                        a.onclick = function () {
+                            activeTag = value;
+                            currentPage = 1;
+                            chips.forEach(function (c) {
+                                c.el.className = 'tag-chip' + (c.value === value ? ' is-active' : '');
+                            });
+                            render();
+                        };
+                        parent.appendChild(a);
+                        chips.push({ el: a, value: value });
+                    };
+                    var addGroup = function (label, tags) {
+                        if (!tags.length) return;
+                        var box = document.createElement('span');
+                        box.className = 'tag-group';
+                        var name = document.createElement('span');
+                        name.className = 'tag-group__label';
+                        name.textContent = label;
+                        box.appendChild(name);
+                        tags.forEach(function (t) { addChip(t, t, box); });
+                        bar.appendChild(box);
+                    };
+
+                    addChip('全部', null, bar);
+                    if (catGroups.length) {
+                        catGroups.forEach(function (g) { addGroup(g.name, g.tags); });
+                        addGroup('其他', looseTags);
+                    } else {
+                        // 一篇文章都没配分类时，退回原来的一排平铺
+                        tagIndex.forEach(function (t) { addChip(t, t, bar); });
+                    }
+                    chips[0].el.className = 'tag-chip is-active';
+                    bar.style.display = '';
+                }
+
+                render();
+            })();
+        </script>
     </div>
 
 </article>
-
 <footer id="footer" class="footer">
     <nav>
         

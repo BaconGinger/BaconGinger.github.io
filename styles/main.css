@@ -149,13 +149,37 @@ figure { margin: 1.5em 0; }
    Header
    ========================================================================== */
 
+/* 除首页外的所有内页都 include 这个头，滚动时吸顶。
+   首页用自己的布局，不 include 它。 */
 .mod-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-top: 40px;
-  position: relative;
+  position: sticky;
+  top: 0;
+  z-index: 60; /* 压过阅读进度条的 50 */
   padding: 10px 15px;
+  background-color: var(--bg-color);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.mod-head__nav {
+  flex: 1;
+  text-align: center;
+  line-height: 26px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.mod-head__nav .menu-item {
+  padding: 0 4px;
+}
+
+.menu-sep {
+  margin: 0 6px;
+  color: var(--text-muted);
+  opacity: 0.6;
 }
 
 .mod-head__logo {
@@ -506,6 +530,23 @@ figure { margin: 1.5em 0; }
   opacity: 1;
   color: var(--accent-color);
   border-color: var(--accent-color);
+}
+
+/* 分类分组：一篇文章都没配分类时不会出现，退化成原来的一排平铺 */
+.tag-group {
+  display: inline-block;
+  margin: 0 1.4em 0.4em 0;
+}
+
+.tag-group__label {
+  font-size: 0.8em;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+}
+
+.tag-group__label::after {
+  content: "·";
+  margin: 0 0.5em;
 }
 
 /* ==========================================================================
@@ -1086,6 +1127,13 @@ body.dark-theme {
 
 .dark-theme .menu-item.active { color: var(--accent-color) !important; }
 
+body.dark-theme .mod-head {
+  background-color: var(--dark-bg);
+  border-bottom-color: var(--dark-border);
+}
+.dark-theme .menu-sep { color: var(--dark-muted); }
+.dark-theme .tag-group__label { color: var(--dark-muted); }
+
 .dark-theme .mod-post__entry p { color: var(--dark-text); }
 .dark-theme .mod-post__entry img { opacity: 0.7; }
 .dark-theme .mod-post__entry a { color: #EC5858; }
@@ -1162,6 +1210,12 @@ body.dark-theme .theme-toggle-moon { display: inline-block !important; color: #F
 }
 
 @media screen and (max-width: 479px) {
+  /* 吸顶栏在窄屏要让出位置给菜单，logo/按钮各缩一点 */
+  .mod-head { padding: 8px 6px; margin-top: 24px; }
+  .mod-head__nav { font-size: 14px; }
+  .mod-head__nav .menu-item { padding: 0 2px; }
+  .menu-sep { margin: 0 3px; }
+  .tag-group { margin-right: 1em; }
   .footer {
     width: 100%;
     font-size: 12px;
