@@ -17,7 +17,7 @@
 
 
 <link rel="stylesheet" href="/styles/icons.css?v=1">
-<link rel="stylesheet" href="/styles/main.css?v=4">
+<link rel="stylesheet" href="/styles/main.css?v=5">
 
 
 <style>:root{--accent-color:#28df99;}</style>
@@ -385,6 +385,28 @@
         </div>
 
         
+        <section id="calendar-block" style="display:none;">
+            <div class="cal-head">
+                <button type="button" class="cal-nav-btn" id="cal-prev" aria-label="上个月">←</button>
+                <span class="cal-month" id="cal-month"></span>
+                <button type="button" class="cal-nav-btn" id="cal-next" aria-label="下个月">→</button>
+                <span class="cal-summary" id="cal-summary"></span>
+            </div>
+            <div class="cal-scroll">
+                <div class="cal-grid" id="cal-grid"></div>
+            </div>
+            <div class="cal-foot">
+                <div class="cal-legend" id="cal-legend"></div>
+            </div>
+            <div class="cal-editor" id="cal-editor" style="display:none;">
+                <span class="cal-editor__label">画笔</span>
+                <span id="cal-brushes"></span>
+                <span class="cal-editor__hint">点一下涂一格，按住拖能连着涂</span>
+                <span class="cal-editor__status" id="cal-status"></span>
+            </div>
+        </section>
+
+        
         <div id="diary-content" style="display:none;">
             <div class="heatmap-nav" id="heatmap-nav"></div>
 
@@ -408,9 +430,9 @@
 
             <div class="memo-pagination" id="memo-pagination">
                 <a href="javascript:void(0);" id="memo-prev-btn" class="disabled" onclick="memoPrevPage()">←
-                    上一页</a>
+                    更早的 5 条</a>
                 <span class="memo-page-info" id="memo-page-info"></span>
-                <a href="javascript:void(0);" id="memo-next-btn" onclick="memoNextPage()">下一页 →</a>
+                <a href="javascript:void(0);" id="memo-next-btn" onclick="memoNextPage()">更近的 5 条 →</a>
             </div>
 
             <div class="diary-actions">
@@ -455,8 +477,20 @@
         // 缓存的是派生出来的密钥（base64 只有 44 字符），不是明文。
         // 这样重新加密过之后旧密钥会解密失败，能明确提示，而不是默默显示旧内容。
         var SESSION_KEY = 'diary.key.v1';
-        var MEMO_PER_PAGE = 20;
+        // 一屏 5 条。点热力图某天时就从那天往后数 5 条 ——
+        // 列表是倒序的，正好是「那天以及它之前的 4 条」。
+        var MEMO_PAGE_SIZE = 5;
         var COLLAPSE_HEIGHT = 160;
+
+        // 日历槽的 AAD，必须与 tools/encrypt-diary.js 里的 CAL_AAD 逐字节一致。
+        // 两个槽共用同一把密钥，靠它做域分离：否则能改密文的人可以把 cal 槽
+        // 抄到日记槽上，页面照样解锁，用户再点「导出 memos.json」就把日历
+        // 当日记存回去，覆盖掉全部日记。
+        var CAL_AD = new TextEncoder().encode('gridea-diary/calendar/v1');
+        var CAL_MAX_CT = 4 * 1024 * 1024; // 头部没有认证，先卡长度再解密
+        // 本地那个「日历编辑器」服务（tools/calendar-server.js）跑在回环地址上，
+        // 只有在这个地址上才开放涂格子；发布出去的页面是只读的。
+        var EDIT_MODE = location.hostname === '127.0.0.1';
 
         var lockPanel = document.getElementById('diary-lock');
         var contentPanel = document.getElementById('diary-content');
@@ -589,38 +623,61 @@
             return '密码不对，或者文件已损坏。';
         }
 
-        // ---------- 分页状态（热力图跳转也要用，所以放在外层）----------
+        // ---------- 显示窗口（热力图跳转也要用，所以放在外层）----------
+        // 原来这里是「第几页」，但窗口现在可以直接跳到中间（点热力图），
+        // 页码就没意义了，改成记「当前窗口是从第几条开始的」。
         var allItems = [];
-        var currentPage = 1;
-        var totalPages = 1;
+        var windowStart = 0;
 
-        function goToPage(p) {
-            if (p < 1 || p > totalPages) return;
-            currentPage = p;
-            var start = (currentPage - 1) * MEMO_PER_PAGE;
-            var end = currentPage * MEMO_PER_PAGE;
+        function showWindow(start) {
+            var last = Math.max(0, allItems.length - MEMO_PAGE_SIZE);
+            if (!(start >= 0)) start = 0;
+            if (start > last) start = last;
+            windowStart = start;
+
+            var end = start + MEMO_PAGE_SIZE;
             for (var i = 0; i < allItems.length; i++) {
                 if (i >= start && i < end) allItems[i].classList.remove('memo-hide');
                 else allItems[i].classList.add('memo-hide');
             }
+
             var prevBtn = document.getElementById('memo-prev-btn');
             var nextBtn = document.getElementById('memo-next-btn');
             var pageInfo = document.getElementById('memo-page-info');
             var pag = document.getElementById('memo-pagination');
-            if (prevBtn) prevBtn.className = currentPage <= 1 ? 'disabled' : '';
-            if (nextBtn) nextBtn.className = currentPage >= totalPages ? 'disabled' : '';
-            if (pageInfo) pageInfo.textContent = currentPage + ' / ' + totalPages;
-            if (pag) pag.style.display = totalPages <= 1 ? 'none' : '';
+
+            var hasOlder = end < allItems.length;
+            var hasNewer = start > 0;
+            if (prevBtn) prevBtn.className = hasOlder ? '' : 'disabled';
+            if (nextBtn) nextBtn.className = hasNewer ? '' : 'disabled';
+
+            if (pageInfo) {
+                if (!allItems.length) {
+                    pageInfo.textContent = '';
+                } else {
+                    var first = allItems[start].getAttribute('data-created');
+                    var lastDate = allItems[Math.min(end, allItems.length) - 1].getAttribute('data-created');
+                    pageInfo.textContent = (first === lastDate ? first : first + ' ~ ' + lastDate) +
+                        '（第 ' + (start + 1) + '–' + Math.min(end, allItems.length) +
+                        ' 条 / 共 ' + allItems.length + ' 条）';
+                }
+            }
+            if (pag) pag.style.display = allItems.length <= MEMO_PAGE_SIZE ? 'none' : '';
         }
 
-        window.memoNextPage = function () {
-            if (currentPage < totalPages) { goToPage(currentPage + 1); window.scrollTo(0, 0); }
+        window.memoNextPage = function () {   // 更近的 5 条
+            if (windowStart > 0) { showWindow(windowStart - MEMO_PAGE_SIZE); window.scrollTo(0, 0); }
         };
-        window.memoPrevPage = function () {
-            if (currentPage > 1) { goToPage(currentPage - 1); window.scrollTo(0, 0); }
+        window.memoPrevPage = function () {   // 更早的 5 条
+            if (windowStart + MEMO_PAGE_SIZE < allItems.length) {
+                showWindow(windowStart + MEMO_PAGE_SIZE);
+                window.scrollTo(0, 0);
+            }
         };
 
-        // 从热力图点某天 → 翻到那一页并高亮
+        // 点热力图某天 → 显示「那天以及之前的 4 条」，并高亮那天最新的一条。
+        // 列表按日期倒序，所以第一个 data-created 等于该天的下标，就正好是
+        // 这天最新的一条；从这里往后取 5 条就是要求的窗口。
         function jumpToDate(dateStr) {
             var idx = -1;
             for (var i = 0; i < allItems.length; i++) {
@@ -628,8 +685,8 @@
             }
             if (idx < 0) return;
 
-            goToPage(Math.floor(idx / MEMO_PER_PAGE) + 1);
-            var el = allItems[idx];
+            showWindow(idx);
+            var el = allItems[idx];   // 窗口被夹到末尾时它仍然在窗口里，一定可见
             var body = el.querySelector('.memo-body');
             var btn = el.querySelector('.memo-expand-btn');
             if (btn && body && body.classList.contains('collapsed')) btn.click();
@@ -668,13 +725,12 @@
             list.innerHTML = html || '<p class="memos-empty">还没有日记</p>';
 
             allItems = Array.prototype.slice.call(document.querySelectorAll('.memo-item'));
-            totalPages = Math.ceil(allItems.length / MEMO_PER_PAGE) || 1;
 
             buildHeatmap();
-            // 必须赶在分页收起之前做：display:none 的元素 scrollHeight 是 0，
-            // 那样第 2 页往后的长条目永远拿不到「展开全文」按钮
+            // 必须赶在窗口收起之前做：display:none 的元素 scrollHeight 是 0，
+            // 那样窗口外的长条目永远拿不到「展开全文」按钮
             wireCollapse();
-            goToPage(1);
+            showWindow(0);   // 默认就是最新的 5 条
         }
 
         // ---------- GitHub 风格热力图 ----------
@@ -796,7 +852,7 @@
             var total = document.getElementById('heatmap-total');
             if (total) {
                 total.textContent = '共 ' + allItems.length + ' 条日记' +
-                    (dates.length ? ' · ' + dates[0] + ' 起' : '') + ' · 点格子跳到那天';
+                    (dates.length ? ' · ' + dates[0] + ' 起' : '') + ' · 点格子看那天的 5 条';
             }
 
             buildYearNav(weeks);
@@ -883,16 +939,345 @@
             });
         }
 
+        // ---------- 时间块日历 ----------
+        // 明文只留在本地 config/calendar.json。发出去的是信封里的 cal 槽：
+        // 跟日记槽同一把密钥、各自一个 iv，并且带 AAD 做域分离。
+        var DEFAULT_STATES = [
+            { id: 'study', name: '学习', light: '#28df99', dark: '#39d353' },
+            { id: 'rest', name: '休息', light: '#f0a35e', dark: '#c98a4b' },
+            { id: 'sleep', name: '睡眠', light: '#8b9dc3', dark: '#4a5a7a' }
+        ];
+        var CAL_HOURS = 24;
+
+        var calData = null;   // { v, states:[…], days:{ 'YYYY-MM-DD': [24 个下标] } }，-1 = 未记录
+        var calMonth = null;  // { y, m }，m 从 0 起
+        var calBrush = 0;     // 当前画笔：0..n 是状态下标，-1 是「清除」
+        var calSaveTimer = null;
+
+        function calStates() {
+            return (calData && calData.states && calData.states.length) ? calData.states : DEFAULT_STATES;
+        }
+
+        // 颜色来自数据文件，但要拼进 <style> 里，先卡成十六进制，别让别的字符混进去
+        var HEX_COLOR = /^#[0-9a-fA-F]{3,8}$/;
+        function safeColor(c, fallback) {
+            return HEX_COLOR.test(String(c == null ? '' : c)) ? c : fallback;
+        }
+
+        /** 状态色一次性注入成 CSS：加第 4 档只要改 JSON，这里跟着走 */
+        function injectCalColors() {
+            var css = calStates().map(function (s, i) {
+                var light = safeColor(s.light, '#cccccc');
+                var dark = safeColor(s.dark, light);
+                return '.cal-cell.s' + i + ',.cal-legend__swatch.s' + i + '{background:' + light + '}' +
+                    'body.dark-theme .cal-cell.s' + i + ',body.dark-theme .cal-legend__swatch.s' + i +
+                    '{background:' + dark + '}';
+            }).join('\n');
+
+            var tag = document.getElementById('cal-colors');
+            if (!tag) {
+                tag = document.createElement('style');
+                tag.id = 'cal-colors';
+                document.head.appendChild(tag);
+            }
+            tag.textContent = css;
+        }
+
+        function calDateKey(y, m, d) {
+            return y + '-' + String(m + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+        }
+        function calDaysInMonth(y, m) {
+            return new Date(y, m + 1, 0).getDate();
+        }
+
+        /** 某天的一行，补齐到 24 格；越界或非数字一律当成「没记」(-1) */
+        function calRow(dateKey) {
+            var src = (calData && calData.days && calData.days[dateKey]) || [];
+            var n = calStates().length;
+            var out = [];
+            for (var h = 0; h < CAL_HOURS; h++) {
+                var v = src[h];
+                out.push(typeof v === 'number' && v >= 0 && v < n ? v : -1);
+            }
+            return out;
+        }
+
+        function calStateName(v) {
+            var s = calStates()[v];
+            return s ? s.name : '未记录';
+        }
+
+        function renderCalLegend() {
+            var el = document.getElementById('cal-legend');
+            if (!el) return;
+            el.innerHTML = calStates().map(function (s, i) {
+                return '<span class="cal-legend__item"><span class="cal-legend__swatch s' + i +
+                    '"></span>' + esc(s.name) + '</span>';
+            }).join('') +
+                '<span class="cal-legend__item"><span class="cal-legend__swatch"></span>未记录</span>';
+        }
+
+        /** 直接从画好的格子上数，省得再把数据解析一遍 */
+        function renderCalSummary() {
+            var el = document.getElementById('cal-summary');
+            var grid = document.getElementById('cal-grid');
+            if (!el || !grid) return;
+
+            var states = calStates();
+            var counts = [];
+            for (var i = 0; i < states.length; i++) counts.push(0);
+
+            var cells = grid.querySelectorAll('.cal-cell');
+            var logged = 0;
+            for (var c = 0; c < cells.length; c++) {
+                var m = /(?:^|\s)s(\d+)(?:\s|$)/.exec(cells[c].className);
+                if (!m) continue;
+                var idx = parseInt(m[1], 10);
+                if (idx >= 0 && idx < counts.length) { counts[idx]++; logged++; }
+            }
+
+            el.textContent = states.map(function (s, i) {
+                return s.name + ' ' + counts[i] + 'h';
+            }).join(' · ') + ' · 已记 ' + logged + ' / ' + cells.length + ' 格';
+        }
+
+        function renderCalendar() {
+            var grid = document.getElementById('cal-grid');
+            var monthEl = document.getElementById('cal-month');
+            if (!grid || !calData || !calMonth) return;
+
+            var y = calMonth.y, m = calMonth.m;
+            var days = calDaysInMonth(y, m);
+            var now = new Date();
+            var todayKey = calDateKey(now.getFullYear(), now.getMonth(), now.getDate());
+
+            if (monthEl) monthEl.textContent = y + ' 年 ' + (m + 1) + ' 月';
+
+            var rows = [];
+            for (var d = 1; d <= days; d++) rows.push(calRow(calDateKey(y, m, d)));
+
+            var html = '<table><thead><tr><th class="cal-hour"></th>';
+            for (var d2 = 1; d2 <= days; d2++) {
+                var wd = new Date(y, m, d2).getDay();
+                html += '<th class="cal-day' +
+                    (calDateKey(y, m, d2) === todayKey ? ' is-today' : '') +
+                    (wd === 0 || wd === 6 ? ' is-weekend' : '') + '">' + d2 + '</th>';
+            }
+            html += '</tr></thead><tbody>';
+
+            for (var h = 0; h < CAL_HOURS; h++) {
+                html += '<tr><th class="cal-hour">' + h + '</th>';
+                for (var d3 = 1; d3 <= days; d3++) {
+                    var day = calDateKey(y, m, d3);
+                    var v = rows[d3 - 1][h];
+                    html += '<td class="cal-cell' + (v >= 0 ? ' s' + v : '') +
+                        '" data-day="' + day + '" data-hour="' + h + '"' +
+                        ' title="' + day + ' ' + h + ':00 · ' + esc(calStateName(v)) + '"></td>';
+                }
+                html += '</tr>';
+            }
+            html += '</tbody></table>';
+            grid.innerHTML = html;
+
+            renderCalLegend();
+            renderCalSummary();
+        }
+
+        function calShiftMonth(delta) {
+            if (!calMonth) return;
+            var m = calMonth.m + delta;
+            calMonth = { y: calMonth.y + Math.floor(m / 12), m: ((m % 12) + 12) % 12 };
+            renderCalendar();
+        }
+
+        // ---- 只有本地（127.0.0.1）才会走到下面这些 ----
+
+        function scheduleCalSave() {
+            var el = document.getElementById('cal-status');
+            if (el) el.textContent = '正在保存…';
+            if (calSaveTimer) clearTimeout(calSaveTimer);
+            calSaveTimer = setTimeout(saveCalendar, 400);
+        }
+
+        function saveCalendar() {
+            calSaveTimer = null;
+            var el = document.getElementById('cal-status');
+            fetch('/api/calendar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(calData)
+            }).then(function (res) {
+                if (res.ok) return null;
+                return res.json().catch(function () { return {}; }).then(function (o) {
+                    throw new Error((o && o.error) || ('HTTP ' + res.status));
+                });
+            }).then(function () {
+                if (el) el.textContent = '已保存 ' + new Date().toLocaleTimeString('zh-CN');
+            }).catch(function (err) {
+                if (el) el.textContent = '保存失败：' + ((err && err.message) || err);
+            });
+        }
+
+        function wireCalEditor() {
+            var grid = document.getElementById('cal-grid');
+            var editor = document.getElementById('cal-editor');
+            var brushBox = document.getElementById('cal-brushes');
+            if (!grid || !editor || !brushBox) return;
+
+            if (calBrush >= calStates().length) calBrush = 0;
+            editor.style.display = '';
+
+            function paintBrushes() {
+                brushBox.innerHTML = calStates().map(function (s, i) {
+                    return '<button type="button" class="cal-brush' +
+                        (i === calBrush ? ' is-active' : '') + '" data-val="' + i + '">' +
+                        '<span class="cal-legend__swatch s' + i + '"></span>' + esc(s.name) + '</button>';
+                }).join('') +
+                    '<button type="button" class="cal-brush' + (calBrush === -1 ? ' is-active' : '') +
+                    '" data-val="-1"><span class="cal-legend__swatch"></span>清除</button>';
+            }
+            paintBrushes();
+
+            brushBox.onclick = function (ev) {
+                var btn = ev.target;
+                while (btn && btn !== brushBox && !(btn.classList && btn.classList.contains('cal-brush'))) {
+                    btn = btn.parentNode;
+                }
+                if (!btn || btn === brushBox) return;
+                var v = parseInt(btn.getAttribute('data-val'), 10);
+                calBrush = (v >= -1) ? v : 0;
+                paintBrushes();
+            };
+
+            function applyCell(td) {
+                var day = td.getAttribute('data-day');
+                var hour = parseInt(td.getAttribute('data-hour'), 10);
+                if (!day || isNaN(hour)) return;
+                // 拖动时同一格会反复触发，涂过一次就别再写
+                if (td.getAttribute('data-brush') === String(calBrush)) return;
+
+                if (!calData.days || typeof calData.days !== 'object' || Array.isArray(calData.days)) {
+                    calData.days = {};
+                }
+                var row = calData.days[day];
+                if (!Array.isArray(row)) { row = []; calData.days[day] = row; }
+                while (row.length < CAL_HOURS) row.push(-1);
+
+                if (row[hour] === calBrush) return;   // 涂成一模一样，不算改动
+                row[hour] = calBrush;
+
+                td.setAttribute('data-brush', String(calBrush));
+                td.className = 'cal-cell' + (calBrush >= 0 ? ' s' + calBrush : '');
+                td.title = day + ' ' + hour + ':00 · ' + calStateName(calBrush);
+
+                renderCalSummary();
+                scheduleCalSave();
+            }
+
+            var painting = false;
+
+            grid.addEventListener('mousedown', function (ev) {
+                if (ev.button !== 0) return;
+                var td = ev.target;
+                if (!td || !td.classList || !td.classList.contains('cal-cell')) return;
+                ev.preventDefault();   // 别让拖拽变成选中文字
+
+                // 清掉上一轮的去重标记，否则同一格连涂两次不生效
+                var marked = grid.querySelectorAll('.cal-cell[data-brush]');
+                for (var i = 0; i < marked.length; i++) marked[i].removeAttribute('data-brush');
+
+                painting = true;
+                applyCell(td);
+            });
+
+            grid.addEventListener('mouseover', function (ev) {
+                if (!painting) return;
+                var td = ev.target;
+                if (!td || !td.classList || !td.classList.contains('cal-cell')) return;
+                applyCell(td);
+            });
+
+            document.addEventListener('mouseup', function () { painting = false; });
+            window.addEventListener('blur', function () { painting = false; });
+
+            // 还有东西没写回去就关页面，拦一下
+            window.addEventListener('beforeunload', function (ev) {
+                if (calSaveTimer) { ev.preventDefault(); ev.returnValue = ''; }
+            });
+        }
+
+        function setupCalendar(data) {
+            calData = (data && typeof data === 'object' && !Array.isArray(data)) ? data : {};
+            if (!Array.isArray(calData.states) || !calData.states.length) {
+                calData.states = DEFAULT_STATES.slice();
+            }
+            if (!calData.days || typeof calData.days !== 'object' || Array.isArray(calData.days)) {
+                calData.days = {};
+            }
+
+            injectCalColors();
+            if (!calMonth) {
+                var now = new Date();
+                calMonth = { y: now.getFullYear(), m: now.getMonth() };
+            }
+
+            var block = document.getElementById('calendar-block');
+            if (block) block.style.display = '';
+            renderCalendar();
+            if (EDIT_MODE) wireCalEditor();
+        }
+
+        /** 本地：直接问服务器要明文，不用先解锁 */
+        function loadCalendarLocal() {
+            fetch('/api/calendar?t=' + Date.now(), { cache: 'no-store' })
+                .then(function (res) {
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+                    return res.json();
+                })
+                .then(setupCalendar)
+                .catch(function () { /* 拿不到就不显示日历，别影响日记 */ });
+        }
+
+        /** 线上：解开信封里的 cal 槽。解不开就当作没有日历，绝不能连累日记 */
+        function loadCalendarFromEnvelope(env, key) {
+            if (!env || !key || !env.cal) return;
+            if (typeof env.cal.iv !== 'string' || typeof env.cal.ct !== 'string') return;
+            if (env.cal.ct.length > CAL_MAX_CT) return;
+
+            crypto.subtle.decrypt({
+                name: 'AES-GCM',
+                iv: b64ToBytes(env.cal.iv),
+                additionalData: CAL_AD,
+                tagLength: 128
+            }, key, b64ToBytes(env.cal.ct))
+                .then(function (buf) {
+                    setupCalendar(JSON.parse(new TextDecoder().decode(buf)));
+                })
+                .catch(function () {
+                    var block = document.getElementById('calendar-block');
+                    if (block) block.style.display = 'none';
+                });
+        }
+
+        (function wireCalNav() {
+            var prev = document.getElementById('cal-prev');
+            var next = document.getElementById('cal-next');
+            if (prev) prev.addEventListener('click', function () { calShiftMonth(-1); });
+            if (next) next.addEventListener('click', function () { calShiftMonth(1); });
+        })();
+
         // ---------- 解锁 / 锁定 ----------
         // 解密出来的那串明文，就是 config/memos.json 本身（加密时是拿原文件字节直接加的），
         // 所以「导出」只要原样吐出来，拿到的就是一份可以接着用的源文件。
         var diaryPlaintext = null;
 
-        function showDiary(data, plaintext) {
+        function showDiary(data, plaintext, env, key) {
             diaryPlaintext = plaintext || null;
             lockPanel.style.display = 'none';
             contentPanel.style.display = '';
             renderDiary(data);
+            // 本地那份日历是从 calendar.json 现拿的，比密文里的新，别用旧的盖掉
+            if (!EDIT_MODE) loadCalendarFromEnvelope(env, key);
         }
 
         function unlock() {
@@ -907,20 +1292,21 @@
             setBusy(true);
             say('解密中…');
 
-            var env;
+            var env, sessionKey;
             fetchEnvelope()
                 .then(function (e) {
                     env = e;
                     return deriveKey(passphrase, env);
                 })
                 .then(function (key) {
+                    sessionKey = key;
                     return decryptWithKey(key, env).then(function (text) {
                         return rememberKey(key).then(function () { return text; });
                     });
                 })
                 .then(function (text) {
                     say('');
-                    showDiary(parsePayload(text), text);
+                    showDiary(parsePayload(text), text, env, sessionKey);
                     if (input) input.value = '';
                 })
                 .catch(function (err) {
@@ -1002,7 +1388,7 @@
                     return decryptWithKey(key, env);
                 })
                 .then(function (text) {
-                    showDiary(parsePayload(text), text);
+                    showDiary(parsePayload(text), text, env, key);
                 })
                 .catch(function () {
                     // 重新加密过（换了密码或加了新日记）会让旧密钥失效，
@@ -1012,6 +1398,9 @@
                     if (input) input.focus();
                 });
         })();
+
+        // 本地编辑模式：日历的明文直接从本地服务拿，不用等解锁
+        if (EDIT_MODE) loadCalendarLocal();
     })();
 </script>
 

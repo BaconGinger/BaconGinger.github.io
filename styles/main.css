@@ -18,6 +18,9 @@
   --dark-text: #a9a9b3;
   --dark-muted: #87878d;
   --dark-border: #444;
+
+  /* 时间块日历里「没记录」那一档的底色 */
+  --cal-empty: #ebedf0;
 }
 
 /* ==========================================================================
@@ -656,6 +659,143 @@ figure { margin: 1.5em 0; }
   display: inline-block;
 }
 
+/* --------------------------------------------------------------------------
+   时间块日历（日记页顶上）。横轴 = 日期，纵轴 = 0–23 点，一格一小时。
+   格子颜色由 JS 按 config/calendar.json 里的 states 注入（明暗各一套），
+   所以这里只定形状，不定颜色，加档不用改 CSS。
+   -------------------------------------------------------------------------- */
+
+.cal-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.cal-nav-btn {
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1;
+  padding: 4px 11px;
+  color: var(--accent-color);
+  background: none;
+  border: 1px solid rgba(40, 223, 153, 0.3);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.cal-nav-btn:hover { background: rgba(40, 223, 153, 0.1); }
+.cal-month { font-size: 14px; font-weight: 600; }
+.cal-summary {
+  margin-left: auto;
+  font-size: 11px;
+  color: #999;
+}
+
+.cal-scroll { overflow-x: auto; margin-bottom: 6px; }
+.cal-grid table {
+  border-collapse: separate;
+  border-spacing: 2px;
+}
+.cal-grid th.cal-hour {
+  width: 22px;
+  min-width: 22px;
+  padding-right: 4px;
+  font-size: 10px;
+  font-weight: 400;
+  color: #999;
+  text-align: right;
+  line-height: 1;
+}
+.cal-grid th.cal-day {
+  min-width: 14px;
+  padding: 0 0 3px 0;
+  font-size: 10px;
+  font-weight: 400;
+  color: #999;
+  line-height: 1;
+}
+.cal-grid th.cal-day.is-weekend { color: #c0a0a0; }
+.cal-grid th.cal-day.is-today { color: var(--accent-color); font-weight: 700; }
+
+.cal-cell {
+  width: 14px;
+  min-width: 14px;
+  height: 13px;
+  border-radius: 2px;
+  background: var(--cal-empty);
+  cursor: default;
+}
+.cal-cell:hover {
+  outline: 1px solid rgba(40, 223, 153, 0.6);
+  outline-offset: -1px;
+}
+
+.cal-foot {
+  display: flex;
+  align-items: center;
+  margin-top: 6px;
+  font-size: 11px;
+  color: #999;
+}
+.cal-legend {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.cal-legend__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.cal-legend__swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  display: inline-block;
+  background: var(--cal-empty);
+}
+
+/* 只有本地（127.0.0.1）才会显示这段 */
+.cal-editor {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border-color);
+  font-size: 11px;
+  color: #999;
+}
+.cal-editor__label { font-weight: 600; }
+.cal-editor__hint { color: #bbb; }
+.cal-editor__status {
+  margin-left: auto;
+  color: var(--accent-color);
+}
+.cal-brush {
+  font-family: inherit;
+  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  margin-right: 4px;
+  color: inherit;
+  background: none;
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+.cal-brush:hover { background: rgba(40, 223, 153, 0.08); }
+.cal-brush.is-active {
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+}
+
 .memos-list { margin-top: 8px; }
 
 .memo-item {
@@ -1121,6 +1261,8 @@ figure { margin: 1.5em 0; }
 body.dark-theme {
   background-color: var(--dark-bg);
   color: var(--dark-text);
+  /* 在 body 上重设，日历格子从这里继承；比 :root 更靠近元素，所以生效 */
+  --cal-empty: #161b22;
 }
 .dark-theme a { color: var(--dark-text); }
 .dark-theme a:hover { color: var(--accent-color); }
@@ -1178,6 +1320,14 @@ body.dark-theme .theme-toggle-moon { display: inline-block !important; color: #F
   0%, 45% { box-shadow: 0 0 0 3px rgba(40, 223, 153, 0.5); }
   100%    { box-shadow: 0 0 0 3px rgba(40, 223, 153, 0); }
 }
+.dark-theme .cal-grid th.cal-hour,
+.dark-theme .cal-grid th.cal-day { color: #666; }
+.dark-theme .cal-grid th.cal-day.is-today { color: var(--accent-color); }
+.dark-theme .cal-summary,
+.dark-theme .cal-foot { color: #777; }
+.dark-theme .cal-editor { border-top-color: var(--dark-border); }
+.dark-theme .cal-brush { border-color: var(--dark-border); }
+
 .dark-theme .heatmap-wrap td.cell[data-level="0"] { background: #161b22 !important; }
 .dark-theme .heatmap-wrap td.cell[data-level="1"] { background: #0e4429 !important; }
 .dark-theme .heatmap-wrap td.cell[data-level="2"] { background: #006d32 !important; }
@@ -1216,6 +1366,11 @@ body.dark-theme .theme-toggle-moon { display: inline-block !important; color: #F
   .mod-head__nav .menu-item { padding: 0 2px; }
   .menu-sep { margin: 0 3px; }
   .tag-group { margin-right: 1em; }
+  /* 31 列在窄屏放不下，格子缩到最小，横向滚动交给 .cal-scroll */
+  .cal-cell { width: 9px; min-width: 9px; height: 9px; }
+  .cal-grid th.cal-day { min-width: 9px; font-size: 9px; }
+  .cal-grid th.cal-hour { width: 16px; min-width: 16px; font-size: 9px; }
+  .cal-summary { margin-left: 0; width: 100%; }
   .footer {
     width: 100%;
     font-size: 12px;
