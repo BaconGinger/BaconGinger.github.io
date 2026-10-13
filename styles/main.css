@@ -796,6 +796,46 @@ figure { margin: 1.5em 0; }
   color: var(--accent-color);
 }
 
+/* 有「具体内容」的格子：右下角一个小白点（浅灰的空格上也看得见，靠深色描边） */
+.cal-cell.has-note { position: relative; }
+.cal-cell.has-note::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.28);
+}
+
+/* 右键格子弹出的「内容」输入框，只有本地编辑器（127.0.0.1）会显示 */
+.cal-note-pop {
+  position: fixed;
+  z-index: 80;
+  width: 240px;
+  padding: 10px 12px;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.16);
+}
+.cal-note-pop__head { font-size: 11px; color: #999; margin-bottom: 6px; }
+.cal-note-pop input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 5px 8px;
+  font-family: inherit;
+  font-size: 13px;
+  color: inherit;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  outline: none;
+}
+.cal-note-pop input:focus { border-color: var(--accent-color); }
+.cal-note-pop__hint { font-size: 10px; color: #bbb; margin-top: 6px; }
+
 .memos-list { margin-top: 8px; }
 
 .memo-item {
@@ -1327,6 +1367,10 @@ body.dark-theme .theme-toggle-moon { display: inline-block !important; color: #F
 .dark-theme .cal-foot { color: #777; }
 .dark-theme .cal-editor { border-top-color: var(--dark-border); }
 .dark-theme .cal-brush { border-color: var(--dark-border); }
+.dark-theme .cal-note-pop { background: #1c2128; border-color: var(--dark-border); }
+.dark-theme .cal-note-pop input { background: #0d1117; color: #c9d1d9; border-color: var(--dark-border); }
+.dark-theme .cal-note-pop__head { color: #777; }
+.dark-theme .cal-note-pop__hint { color: #666; }
 
 .dark-theme .heatmap-wrap td.cell[data-level="0"] { background: #161b22 !important; }
 .dark-theme .heatmap-wrap td.cell[data-level="1"] { background: #0e4429 !important; }

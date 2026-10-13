@@ -17,7 +17,7 @@
 
 
 <link rel="stylesheet" href="/styles/icons.css?v=1">
-<link rel="stylesheet" href="/styles/main.css?v=5">
+<link rel="stylesheet" href="/styles/main.css?v=6">
 
 
 <style>:root{--accent-color:#28df99;}</style>
@@ -401,8 +401,15 @@
             <div class="cal-editor" id="cal-editor" style="display:none;">
                 <span class="cal-editor__label">画笔</span>
                 <span id="cal-brushes"></span>
-                <span class="cal-editor__hint">点一下涂一格，按住拖能连着涂</span>
+                <span class="cal-editor__hint">点一下涂一格，按住拖能连着涂；右键格子可写具体内容</span>
                 <span class="cal-editor__status" id="cal-status"></span>
+            </div>
+            
+            <div class="cal-note-pop" id="cal-note-pop" style="display:none;">
+                <div class="cal-note-pop__head" id="cal-note-pop-head"></div>
+                <input type="text" id="cal-note-pop-input" maxlength="60" placeholder="写点具体内容…"
+                    autocomplete="off" spellcheck="false">
+                <div class="cal-note-pop__hint">回车保存 · Esc 取消 · 清空后回车就是删掉</div>
             </div>
         </section>
 
@@ -942,14 +949,20 @@
         // ---------- 时间块日历 ----------
         // 明文只留在本地 config/calendar.json。发出去的是信封里的 cal 槽：
         // 跟日记槽同一把密钥、各自一个 iv，并且带 AAD 做域分离。
+        // 默认状态表，跟 config/calendar.json 里的 states 保持同步。
+        // 注意：格子里存的是**下标**，下标是数据的一部分 —— 改名字没关系，
+        // 但不要调整顺序、不要从中间删项，否则已经涂过的格子会串位。
         var DEFAULT_STATES = [
             { id: 'study', name: '学习', light: '#28df99', dark: '#39d353' },
-            { id: 'rest', name: '休息', light: '#f0a35e', dark: '#c98a4b' },
-            { id: 'sleep', name: '睡眠', light: '#8b9dc3', dark: '#4a5a7a' }
+            { id: 'ent', name: '娱乐', light: '#f0a35e', dark: '#c98a4b' },
+            { id: 'sleep', name: '睡眠', light: '#8b9dc3', dark: '#4a5a7a' },
+            { id: 'other', name: '其他', light: '#b18cf0', dark: '#7757c9' }
         ];
         var CAL_HOURS = 24;
 
-        var calData = null;   // { v, states:[…], days:{ 'YYYY-MM-DD': [24 个下标] } }，-1 = 未记录
+        // calData = { v, states:[…], days:{ 'YYYY-MM-DD': [24 个下标] }, notes:{ 'YYYY-MM-DD': { '14': '写代码' } } }
+        // days 里的 -1 = 未记录；notes 可以整个没有、也可以只写部分格子
+        var calData = null;
         var calMonth = null;  // { y, m }，m 从 0 起
         var calBrush = 0;     // 当前画笔：0..n 是状态下标，-1 是「清除」
         var calSaveTimer = null;
@@ -1005,6 +1018,25 @@
         function calStateName(v) {
             var s = calStates()[v];
             return s ? s.name : '未记录';
+        }
+
+        /** 某格的具体内容。没写过、或数据里压根没有 notes，都返回空串 */
+        function calNote(day, hour) {
+            var bucket = calData && calData.notes && calData.notes[day];
+            var v = bucket ? bucket[hour] : undefined;
+            return typeof v === 'string' ? v : '';
+        }
+
+        /** 悬停提示：日期 时间 · 状态 ·（内容） */
+        function calCellTitle(day, hour, v) {
+            var t = day + ' ' + hour + ':00 · ' + calStateName(v);
+            var n = calNote(day, hour);
+            return n ? t + ' · ' + n : t;
+        }
+
+        /** 格子的 class：状态色 + 有没有内容（带内容会点一个小白点） */
+        function calCellClass(day, hour, v) {
+            return 'cal-cell' + (v >= 0 ? ' s' + v : '') + (calNote(day, hour) ? ' has-note' : '');
         }
 
         function renderCalLegend() {
@@ -1070,9 +1102,9 @@
                 for (var d3 = 1; d3 <= days; d3++) {
                     var day = calDateKey(y, m, d3);
                     var v = rows[d3 - 1][h];
-                    html += '<td class="cal-cell' + (v >= 0 ? ' s' + v : '') +
+                    html += '<td class="' + calCellClass(day, h, v) +
                         '" data-day="' + day + '" data-hour="' + h + '"' +
-                        ' title="' + day + ' ' + h + ':00 · ' + esc(calStateName(v)) + '"></td>';
+                        ' title="' + esc(calCellTitle(day, h, v)) + '"></td>';
                 }
                 html += '</tr>';
             }
@@ -1167,8 +1199,8 @@
                 row[hour] = calBrush;
 
                 td.setAttribute('data-brush', String(calBrush));
-                td.className = 'cal-cell' + (calBrush >= 0 ? ' s' + calBrush : '');
-                td.title = day + ' ' + hour + ':00 · ' + calStateName(calBrush);
+                td.className = calCellClass(day, hour, calBrush);
+                td.title = calCellTitle(day, hour, calBrush);
 
                 renderCalSummary();
                 scheduleCalSave();
@@ -1203,6 +1235,99 @@
             // 还有东西没写回去就关页面，拦一下
             window.addEventListener('beforeunload', function (ev) {
                 if (calSaveTimer) { ev.preventDefault(); ev.returnValue = ''; }
+            });
+
+            // ---- 右键格子：写这格的具体内容 ----
+            var notePop = document.getElementById('cal-note-pop');
+            var noteInput = document.getElementById('cal-note-pop-input');
+            var noteHead = document.getElementById('cal-note-pop-head');
+            var noteCell = null;   // 正在编辑的格子
+
+            function openCalNote(td) {
+                if (!notePop || !noteInput) return;
+                var day = td.getAttribute('data-day');
+                var hour = parseInt(td.getAttribute('data-hour'), 10);
+                if (!day || isNaN(hour)) return;
+
+                noteCell = td;
+                var row = calData.days && calData.days[day];
+                var v = row && typeof row[hour] === 'number' ? row[hour] : -1;
+                if (noteHead) noteHead.textContent = day + ' ' + hour + ':00 · ' + calStateName(v);
+                noteInput.value = calNote(day, hour);
+
+                // 贴着格子放，出视口就翻到上面/缩回来。先藏起来量尺寸
+                notePop.style.display = '';
+                notePop.style.visibility = 'hidden';
+                var r = td.getBoundingClientRect();
+                var w = notePop.offsetWidth;
+                var h = notePop.offsetHeight;
+                var x = Math.max(8, Math.min(r.left, window.innerWidth - w - 8));
+                var y = r.bottom + 6;
+                if (y + h > window.innerHeight - 8) y = r.top - h - 6;
+                notePop.style.left = x + 'px';
+                notePop.style.top = Math.max(8, y) + 'px';
+                notePop.style.visibility = '';
+
+                noteInput.focus();
+                noteInput.select();
+            }
+
+            function closeCalNote() {
+                noteCell = null;
+                if (notePop) notePop.style.display = 'none';
+            }
+
+            /** save=true 保存输入框里的字（空的 = 删掉），false = 原样放弃 */
+            function commitCalNote(save) {
+                var td = noteCell;
+                if (!td) return;
+                var day = td.getAttribute('data-day');
+                var hour = parseInt(td.getAttribute('data-hour'), 10);
+                var changed = false;
+
+                if (save && day && !isNaN(hour)) {
+                    var text = noteInput.value.replace(/\s+/g, ' ').trim().slice(0, 60);
+
+                    if (!calData.notes || typeof calData.notes !== 'object' || Array.isArray(calData.notes)) {
+                        calData.notes = {};
+                    }
+                    var bucket = calData.notes[day];
+                    if (!bucket || typeof bucket !== 'object' || Array.isArray(bucket)) {
+                        bucket = calData.notes[day] = {};
+                    }
+
+                    if (text) {
+                        if (bucket[hour] !== text) { bucket[hour] = text; changed = true; }
+                    } else if (Object.prototype.hasOwnProperty.call(bucket, hour)) {
+                        delete bucket[hour];
+                        changed = true;
+                    }
+                    if (!Object.keys(bucket).length) delete calData.notes[day];
+
+                    // 这格的提示和小白点立刻跟着变
+                    var row = calData.days && calData.days[day];
+                    var v = row && typeof row[hour] === 'number' ? row[hour] : -1;
+                    td.className = calCellClass(day, hour, v);
+                    td.title = calCellTitle(day, hour, v);
+                    if (changed) scheduleCalSave();
+                }
+                closeCalNote();
+            }
+
+            if (noteInput) {
+                noteInput.addEventListener('keydown', function (ev) {
+                    if (ev.key === 'Enter') { ev.preventDefault(); commitCalNote(true); }
+                    else if (ev.key === 'Escape') { ev.preventDefault(); commitCalNote(false); }
+                });
+                // 点到别处就当保存（跟改文件名一个习惯），反正写错了可以再改
+                noteInput.addEventListener('blur', function () { commitCalNote(true); });
+            }
+
+            grid.addEventListener('contextmenu', function (ev) {
+                var td = ev.target;
+                if (!td || !td.classList || !td.classList.contains('cal-cell')) return;
+                ev.preventDefault();
+                openCalNote(td);
             });
         }
 
